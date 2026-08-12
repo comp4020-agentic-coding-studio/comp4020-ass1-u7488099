@@ -8,9 +8,18 @@ const NATURAL_SEMITONE: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7,
 const LETTER_ORDER = ["C", "D", "E", "F", "G", "A", "B"];
 const CHROMATIC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
+// Melodic Minor is defined using its ascending form only (raised 6th and
+// 7th). Traditionally the scale differs ascending vs descending, but
+// transformMelody has no notion of melodic direction — this is a documented
+// simplification (the same one modern jazz theory makes with the "jazz minor
+// scale"), not the full traditional definition.
 const SCALE_INTERVALS: Record<string, number[]> = {
   Major: [0, 2, 4, 5, 7, 9, 11],
   "Natural Minor": [0, 2, 3, 5, 7, 8, 10],
+  "Harmonic Minor": [0, 2, 3, 5, 7, 8, 11],
+  "Melodic Minor (ascending)": [0, 2, 3, 5, 7, 9, 11],
+  Dorian: [0, 2, 3, 5, 7, 9, 10],
+  Phrygian: [0, 1, 3, 5, 7, 8, 10],
   Hijaz: [0, 1, 4, 5, 7, 8, 10],
 };
 

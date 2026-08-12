@@ -46,3 +46,29 @@ export const TWINKLE_TWINKLE: Melody = {
   name: "Twinkle Twinkle Little Star",
   notes: [...A_SECTION, ...B_SECTION, ...A_SECTION],
 };
+
+// Joy to the World's opening phrase ("Joy to the world, the Lord is come"):
+// a stepwise descending scale, do-ti-la-sol-fa-mi-re-do, touching every one
+// of the seven scale degrees exactly once. Twinkle never uses ti, so it can't
+// distinguish scales that differ only there (Harmonic Minor from Natural
+// Minor, Dorian from Melodic Minor); this phrase exists to make those pairs
+// audibly different. Public-domain hymn tune ("Antioch", 1848 Lowell Mason
+// arrangement, melodic material attributed to Handel). The rhythm here is a
+// simplified, documented choice — hymnals vary slightly on it — what this
+// prototype needs is the exact descending degree sequence, not liturgical
+// rhythmic fidelity.
+const JOY_TO_THE_WORLD_PHRASE: MelodyNote[] = [
+  n("C5", 0, 1),
+  n("B4", 6, 1),
+  n("A4", 5, 1),
+  n("G4", 4, 1),
+  n("F4", 3, 1),
+  n("E4", 2, 1),
+  n("D4", 1, 1),
+  n("C4", 0, 2),
+];
+
+export const JOY_TO_THE_WORLD: Melody = {
+  name: "Joy to the World (opening phrase)",
+  notes: JOY_TO_THE_WORLD_PHRASE,
+};
