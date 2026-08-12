@@ -169,8 +169,8 @@ finish.
   --- don't add transpose, key, or tempo controls; they'd confound the one
   variable this piece is about.
 - **`transformMelody` is pure and deterministic.** No `Date.now()`,
-  `Math.random()`, or hidden state. The same `(notes, scaleName)` input always
-  produces the same output array --- this is both a testability requirement
+  `Math.random()`, or hidden state. The same `(melody, targetScaleName)`
+  input always produces the same output array --- this is both a testability requirement
   and a musical-integrity one, since the whole point is a controlled
   comparison.
 - **Guaranteed scales: Major, Natural Minor, Hijaz** --- all 7-note, so no

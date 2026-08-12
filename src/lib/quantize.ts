@@ -1,9 +1,10 @@
 // Nearest-note quantization: a second transformation family, for target
-// scales with fewer notes than the source melody's diatonic scale.
-// transformMelody's scale-degree substitution assumes matching cardinality
-// (each degree maps to one target interval); wrapping a 7-degree melody
-// directly around a 5-note scale can turn a step into a leap the original
-// never had. This family instead keeps every note's absolute register and
+// scales with a different cardinality than the source melody's scale.
+// scales.ts#substituteDegrees's scale-degree substitution assumes matching
+// cardinality (each degree maps to one target interval); wrapping a
+// 7-degree melody directly around a 5-note scale can turn a step into a
+// leap the original never had. This family instead keeps every note's
+// absolute register and
 // only moves a pitch when it isn't already a member of the target scale --
 // to whichever member is nearest in semitones. Two different source
 // pitches landing on the same target pitch ("note collapsing") is an
@@ -20,13 +21,8 @@
 // of collapsing it onto one. A single (non-repeated) missing note still
 // just takes the nearest legal tone, unchanged.
 
-import { noteToSemitone, parseNote, semitoneToNoteName } from "./scales.ts";
-
-const QUANTIZE_SCALE_PITCH_CLASSES: Record<string, number[]> = {
-  "Major Pentatonic": [0, 2, 4, 7, 9],
-  "Minor Pentatonic": [0, 3, 5, 7, 10],
-  "In Sen": [0, 1, 5, 7, 10],
-};
+import type { Melody } from "./melodies.ts";
+import { noteToSemitone, parseNote, SCALES, semitoneToNoteName, substituteDegrees } from "./scales.ts";
 
 // Signed semitone offset from `pitchClass` to the nearest member of
 // `targetPitchClasses`, in range (-6, 6]. On an exact tie between two
@@ -104,9 +100,9 @@ function splitRepeatedRun(
   return Array.from({ length: runLength }, (_, k) => semitoneToNoteName(absoluteSemitone + order[k % 2]));
 }
 
-export function quantizeMelody(notes: string[], scaleName: string): string[] {
-  const targetPitchClasses = QUANTIZE_SCALE_PITCH_CLASSES[scaleName];
-  if (!targetPitchClasses) throw new Error(`unknown quantization scale: "${scaleName}"`);
+// Exported for tests that exercise the core snapping/splitting logic
+// against synthetic pitch arrays with no melody or tonic behind them.
+export function quantizePitches(notes: string[], targetPitchClasses: number[]): string[] {
   if (notes.length === 0) return [];
 
   const result: string[] = Array.from({ length: notes.length });
@@ -139,4 +135,19 @@ export function quantizeMelody(notes: string[], scaleName: string): string[] {
   }
 
   return result;
+}
+
+// --- Unified model (see transform.ts) -------------------------------------
+//
+// Renders the melody in its own source scale first (so every note has an
+// absolute register to quantize from), then snaps each pitch not already
+// in targetScaleName onto the nearest member via the shared
+// nearestSignedOffset/splitRepeatedRun logic above. Works for any
+// cardinality pairing; transform.ts picks this over substituteDegrees
+// whenever cardinalities differ.
+export function quantizeToScale(melody: Melody, targetScaleName: string): string[] {
+  const targetIntervals = SCALES[targetScaleName];
+  if (!targetIntervals) throw new Error(`unknown scale: "${targetScaleName}"`);
+  const native = substituteDegrees(melody, melody.sourceScale);
+  return quantizePitches(native, targetIntervals);
 }

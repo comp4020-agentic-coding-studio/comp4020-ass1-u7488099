@@ -65,8 +65,8 @@ import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
     </main>
 
     <script>
-      import { transformMelody } from "../lib/scales.ts";
-      import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE, pitches } from "../lib/melodies.ts";
+      import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
+      import { transformMelody } from "../lib/transform.ts";
       import { playNotes } from "../lib/audio.ts";
 
       const melodies = { twinkle: TWINKLE_TWINKLE, joy: JOY_TO_THE_WORLD };
@@ -81,7 +81,7 @@ import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
       }
 
       function currentTransformedPitches(): string[] {
-        return transformMelody(pitches(currentMelody()), scaleSelect.value);
+        return transformMelody(currentMelody(), scaleSelect.value);
       }
 
       function render(): void {

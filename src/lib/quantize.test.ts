@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { TWINKLE_TWINKLE, pitches } from "./melodies.ts";
-import { quantizeMelody } from "./quantize.ts";
+import { TWINKLE_TWINKLE } from "./melodies.ts";
+import { quantizePitches, quantizeToScale } from "./quantize.ts";
+import { substituteDegrees } from "./scales.ts";
 
-const TWINKLE = pitches(TWINKLE_TWINKLE);
+// Twinkle rendered in its own source scale -- the same absolute pitches the
+// old pitches(TWINKLE_TWINKLE) helper used to hand these tests directly.
+const TWINKLE = substituteDegrees(TWINKLE_TWINKLE, TWINKLE_TWINKLE.sourceScale);
 const QUANTIZE_SCALES = ["Major Pentatonic", "Minor Pentatonic", "In Sen"];
 
 // Duplicated here rather than imported so this test doesn't just restate
-// whatever quantize.ts happens to define.
+// whatever the SCALES catalog happens to define.
 const PITCH_CLASSES: Record<string, number[]> = {
   "Major Pentatonic": [0, 2, 4, 7, 9],
   "Minor Pentatonic": [0, 3, 5, 7, 10],
@@ -24,25 +27,45 @@ function pitchClass(note: string): number {
   return ((base + offset) % 12 + 12) % 12;
 }
 
-describe("quantizeMelody", () => {
+// Captured from the pre-migration quantizeMelody(notes[], scaleName) -- the
+// byte-identical acceptance criteria for this rewrite.
+const TWINKLE_GOLDEN: Record<string, string[]> = {
+  "Major Pentatonic": [
+    "C4","C4","G4","G4","A4","A4","G4","E4","G4","E4","E4","D4","D4","C4",
+    "G4","G4","E4","G4","E4","E4","D4","G4","G4","E4","G4","E4","E4","D4",
+    "C4","C4","G4","G4","A4","A4","G4","E4","G4","E4","E4","D4","D4","C4",
+  ],
+  "Minor Pentatonic": [
+    "C4","C4","G4","G4","A#4","G4","G4","F4","F4","D#4","F4","D#4","C4","C4",
+    "G4","G4","F4","F4","D#4","F4","D#4","G4","G4","F4","F4","D#4","F4","D#4",
+    "C4","C4","G4","G4","A#4","G4","G4","F4","F4","D#4","F4","D#4","C4","C4",
+  ],
+  "In Sen": [
+    "C4","C4","G4","G4","A#4","G4","G4","F4","F4","C#4","F4","C#4","F4","C4",
+    "G4","G4","F4","F4","C#4","F4","C#4","G4","G4","F4","F4","C#4","F4","C#4",
+    "C4","C4","G4","G4","A#4","G4","G4","F4","F4","C#4","F4","C#4","F4","C4",
+  ],
+};
+
+describe("quantizeToScale", () => {
   it("is deterministic", () => {
     for (const scale of QUANTIZE_SCALES) {
-      const a = quantizeMelody(TWINKLE, scale);
-      const b = quantizeMelody(TWINKLE, scale);
+      const a = quantizeToScale(TWINKLE_TWINKLE, scale);
+      const b = quantizeToScale(TWINKLE_TWINKLE, scale);
       expect(a, scale).toEqual(b);
     }
   });
 
   it("preserves note count", () => {
     for (const scale of QUANTIZE_SCALES) {
-      expect(quantizeMelody(TWINKLE, scale), scale).toHaveLength(TWINKLE.length);
+      expect(quantizeToScale(TWINKLE_TWINKLE, scale), scale).toHaveLength(TWINKLE.length);
     }
   });
 
   it("only emits pitches that are members of the target scale", () => {
     for (const scale of QUANTIZE_SCALES) {
       const allowed = PITCH_CLASSES[scale];
-      for (const note of quantizeMelody(TWINKLE, scale)) {
+      for (const note of quantizeToScale(TWINKLE_TWINKLE, scale)) {
         expect(allowed, `${note} under ${scale} is not in {${allowed.join(",")}}`).toContain(pitchClass(note));
       }
     }
@@ -52,7 +75,7 @@ describe("quantizeMelody", () => {
     // Major Pentatonic already contains do/re/mi/sol/la -- everything
     // Twinkle uses except fa (pitch class 5) -- so every note other than F
     // should pass through untouched.
-    const quantized = quantizeMelody(TWINKLE, "Major Pentatonic");
+    const quantized = quantizeToScale(TWINKLE_TWINKLE, "Major Pentatonic");
     TWINKLE.forEach((note, i) => {
       if (pitchClass(note) !== 5) {
         expect(quantized[i], `note ${i} (${note}) should be unchanged`).toBe(note);
@@ -66,12 +89,13 @@ describe("quantizeMelody", () => {
     // rule picks the lower one: D#.
     const idx = TWINKLE.findIndex((note) => note === "E4");
     expect(idx, "expected Twinkle to contain E4").toBeGreaterThanOrEqual(0);
-    expect(quantizeMelody(TWINKLE, "Minor Pentatonic")[idx]).toBe("D#4");
+    expect(quantizeToScale(TWINKLE_TWINKLE, "Minor Pentatonic")[idx]).toBe("D#4");
   });
 
   it("keeps the tonic in place", () => {
+    const tonicIndex = TWINKLE_TWINKLE.notes.findIndex((note) => note.scaleStep === 0);
     for (const scale of QUANTIZE_SCALES) {
-      expect(quantizeMelody(TWINKLE, scale)[0], scale).toBe(TWINKLE[0]);
+      expect(quantizeToScale(TWINKLE_TWINKLE, scale)[tonicIndex], scale).toBe(TWINKLE[tonicIndex]);
     }
   });
 
@@ -83,13 +107,15 @@ describe("quantizeMelody", () => {
     // rule instead splits the repeated F between its two legal Major
     // Pentatonic neighbours (E below, G above), preserving that boundary.
     const segment = ["F4", "F4", "E4", "E4", "D4", "D4", "C4"];
-    expect(quantizeMelody(segment, "Major Pentatonic")).toEqual(["E4", "G4", "E4", "E4", "D4", "D4", "C4"]);
+    expect(quantizePitches(segment, PITCH_CLASSES["Major Pentatonic"])).toEqual([
+      "E4", "G4", "E4", "E4", "D4", "D4", "C4",
+    ]);
   });
 
   it("does not collapse a repeated missing-note run into one repeated output pitch", () => {
     for (const scale of QUANTIZE_SCALES) {
       const allowed = PITCH_CLASSES[scale];
-      const quantized = quantizeMelody(TWINKLE, scale);
+      const quantized = quantizeToScale(TWINKLE_TWINKLE, scale);
 
       let i = 0;
       while (i < TWINKLE.length) {
@@ -116,7 +142,7 @@ describe("quantizeMelody", () => {
   it("never starts a substituted run on the pitch immediately preceding it", () => {
     for (const scale of QUANTIZE_SCALES) {
       const allowed = PITCH_CLASSES[scale];
-      const quantized = quantizeMelody(TWINKLE, scale);
+      const quantized = quantizeToScale(TWINKLE_TWINKLE, scale);
 
       let i = 0;
       while (i < TWINKLE.length) {
@@ -136,6 +162,12 @@ describe("quantizeMelody", () => {
         }
         i = j + 1;
       }
+    }
+  });
+
+  it("matches the pre-migration quantizeMelody output exactly, for every quantize scale", () => {
+    for (const scale of QUANTIZE_SCALES) {
+      expect(quantizeToScale(TWINKLE_TWINKLE, scale), scale).toEqual(TWINKLE_GOLDEN[scale]);
     }
   });
 });

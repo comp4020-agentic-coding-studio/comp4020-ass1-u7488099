@@ -1,27 +1,15 @@
-// Scale-degree remapping: the melody's shape (which diatonic letter-step each
-// note sits on, relative to the tonic) stays fixed; only the semitone each
-// step maps to changes with the scale. This is what keeps the comparison
-// controlled — rhythm and note count come from the caller untouched, and the
-// tonic (scale degree 0) always maps back to itself by construction.
+// Scale-degree remapping: a melody's shape (which scaleStep each note sits
+// on, relative to the tonic, in the melody's declared sourceScale) stays
+// fixed; only the semitone each step maps to changes with the target scale.
+// This is what keeps the comparison controlled -- rhythm and note count
+// come from the caller untouched, and the tonic (scale step 0) always maps
+// back to itself by construction. See transform.ts for the dispatcher that
+// picks this substitution family over quantize.ts's nearest-pitch family.
+
+import type { Melody } from "./melodies.ts";
 
 const NATURAL_SEMITONE: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-const LETTER_ORDER = ["C", "D", "E", "F", "G", "A", "B"];
 const CHROMATIC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-
-// Melodic Minor is defined using its ascending form only (raised 6th and
-// 7th). Traditionally the scale differs ascending vs descending, but
-// transformMelody has no notion of melodic direction — this is a documented
-// simplification (the same one modern jazz theory makes with the "jazz minor
-// scale"), not the full traditional definition.
-const SCALE_INTERVALS: Record<string, number[]> = {
-  Major: [0, 2, 4, 5, 7, 9, 11],
-  "Natural Minor": [0, 2, 3, 5, 7, 8, 10],
-  "Harmonic Minor": [0, 2, 3, 5, 7, 8, 11],
-  "Melodic Minor (ascending)": [0, 2, 3, 5, 7, 9, 11],
-  Dorian: [0, 2, 3, 5, 7, 9, 10],
-  Phrygian: [0, 1, 3, 5, 7, 8, 10],
-  Hijaz: [0, 1, 4, 5, 7, 8, 10],
-};
 
 interface ParsedNote {
   letter: string;
@@ -29,8 +17,8 @@ interface ParsedNote {
   octave: number;
 }
 
-// Exported alongside transformMelody so quantize.ts's nearest-note family can
-// share the same note parsing/naming instead of duplicating it.
+// Exported alongside SCALES so quantize.ts's nearest-note family can share
+// the same note parsing/naming instead of duplicating it.
 export function parseNote(note: string): ParsedNote {
   const match = note.match(/^([A-G])(#|b)?(-?\d+)$/);
   if (!match) throw new Error(`unparseable note name: "${note}"`);
@@ -49,30 +37,45 @@ export function semitoneToNoteName(semitone: number): string {
   return `${CHROMATIC_NAMES[pitchClass]}${octave}`;
 }
 
-// Diatonic letter-distance from the tonic, unwrapped across octaves — degree
-// is this mod 7 (which scale step), octaveShift is this div 7 (how many
-// octaves above/below the tonic's octave that step lands in). Only the
-// letter matters here, not any accidental on the input note: contour is
-// about which step of the original melody's scale a note occupies, not its
-// exact chromatic pitch.
-function diatonicIndex(note: ParsedNote, tonic: ParsedNote): number {
-  const letterDelta = LETTER_ORDER.indexOf(note.letter) - LETTER_ORDER.indexOf(tonic.letter);
-  return (note.octave - tonic.octave) * 7 + letterDelta;
-}
+// A single catalog spanning every scale either transform family uses, keyed
+// by name, valued by ascending semitone offsets from the tonic. Cardinality
+// (SCALES[name].length) is what transform.ts's dispatcher compares to
+// choose substitution vs. quantization -- there's no separate "which family
+// is this scale for" list anywhere.
+//
+// Melodic Minor is defined using its ascending form only (raised 6th and
+// 7th). Traditionally the scale differs ascending vs descending, but
+// substituteDegrees has no notion of melodic direction -- this is a
+// documented simplification (the same one modern jazz theory makes with the
+// "jazz minor scale"), not the full traditional definition.
+export const SCALES: Record<string, number[]> = {
+  Major: [0, 2, 4, 5, 7, 9, 11],
+  "Natural Minor": [0, 2, 3, 5, 7, 8, 10],
+  "Harmonic Minor": [0, 2, 3, 5, 7, 8, 11],
+  "Melodic Minor (ascending)": [0, 2, 3, 5, 7, 9, 11],
+  Dorian: [0, 2, 3, 5, 7, 9, 10],
+  Phrygian: [0, 1, 3, 5, 7, 8, 10],
+  Hijaz: [0, 1, 4, 5, 7, 8, 10],
+  "Major Pentatonic": [0, 2, 4, 7, 9],
+  "Minor Pentatonic": [0, 3, 5, 7, 10],
+  "In Sen": [0, 1, 5, 7, 10],
+  "Chromatic / Free": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+};
 
-export function transformMelody(notes: string[], scaleName: string): string[] {
-  const intervals = SCALE_INTERVALS[scaleName];
-  if (!intervals) throw new Error(`unknown scale: "${scaleName}"`);
-  if (notes.length === 0) return [];
+// Degree-preserving substitution against a melody's own recorded scaleStep
+// (signed, octave-aware) rather than a letter distance inferred from
+// notes[0]. Requires equal cardinality between melody.sourceScale and
+// targetScaleName; transform.ts is what enforces that by choosing this
+// function only when cardinalities match.
+export function substituteDegrees(melody: Melody, targetScaleName: string): string[] {
+  const targetIntervals = SCALES[targetScaleName];
+  if (!targetIntervals) throw new Error(`unknown scale: "${targetScaleName}"`);
+  const tonicSemitone = noteToSemitone(parseNote(melody.tonic));
+  const cardinality = targetIntervals.length;
 
-  const tonic = parseNote(notes[0]);
-  const tonicSemitone = noteToSemitone(tonic);
-
-  return notes.map((rawNote) => {
-    const note = parseNote(rawNote);
-    const index = diatonicIndex(note, tonic);
-    const degree = ((index % 7) + 7) % 7;
-    const octaveShift = Math.floor(index / 7);
-    return semitoneToNoteName(tonicSemitone + intervals[degree] + 12 * octaveShift);
+  return melody.notes.map(({ scaleStep }) => {
+    const degree = ((scaleStep % cardinality) + cardinality) % cardinality;
+    const octaveShift = Math.floor(scaleStep / cardinality);
+    return semitoneToNoteName(tonicSemitone + targetIntervals[degree] + 12 * octaveShift);
   });
 }

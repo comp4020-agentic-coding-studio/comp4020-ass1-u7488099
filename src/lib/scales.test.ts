@@ -1,18 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE, pitches } from "./melodies.ts";
-import { transformMelody } from "./scales.ts";
+import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "./melodies.ts";
+import { substituteDegrees } from "./scales.ts";
 
 // Encodes the "controlled comparison" rule from CLAUDE.md: switching scales
 // must only change pitch, never rhythm, note count, or which absolute pitch
-// the tonic (scale degree 0) lands on. transformMelody(notes, scaleName) is
+// the tonic (scaleStep 0) lands on. substituteDegrees(melody, scaleName) is
 // yours to place/rename; update the import path above if it moves.
 
 // Twinkle never uses ti, so it can't tell apart scales that only differ
 // there (Harmonic Minor vs Natural Minor, Dorian vs Melodic Minor). Joy to
 // the World's opening phrase is a descending scale that hits every degree
 // exactly once, so pairwise-distinctness is checked against it instead.
-const TWINKLE = pitches(TWINKLE_TWINKLE);
-const JOY = pitches(JOY_TO_THE_WORLD);
 
 const CORE_SCALES = [
   "Major",
@@ -55,34 +53,100 @@ function pitchClass(note: string): number {
   return ((base + offset) % 12 + 12) % 12;
 }
 
-describe("transformMelody", () => {
+// The index of the note whose scaleStep is 0 -- the tonic -- wherever it
+// falls in the melody. Not assumed to be index 0: Joy to the World's tonic
+// is its last note (index 7), not its first.
+function tonicIndex(melody: typeof TWINKLE_TWINKLE): number {
+  const index = melody.notes.findIndex((note) => note.scaleStep === 0);
+  if (index === -1) throw new Error(`${melody.name} has no scaleStep-0 note`);
+  return index;
+}
+
+// Captured from the pre-migration transformMelody(notes[], scaleName) --
+// the byte-identical acceptance criteria for this rewrite. Twinkle's tonic
+// was already C4 under the old model, so its output is unchanged; Joy's
+// tonic moved from an implicit C5 to an explicit C4 (scaleStep 7 for the
+// opening note), which reproduces the same absolute pitches.
+const TWINKLE_GOLDEN: Record<string, string[]> = {
+  Major: [
+    "C4","C4","G4","G4","A4","A4","G4","F4","F4","E4","E4","D4","D4","C4",
+    "G4","G4","F4","F4","E4","E4","D4","G4","G4","F4","F4","E4","E4","D4",
+    "C4","C4","G4","G4","A4","A4","G4","F4","F4","E4","E4","D4","D4","C4",
+  ],
+  "Natural Minor": [
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+    "G4","G4","F4","F4","D#4","D#4","D4","G4","G4","F4","F4","D#4","D#4","D4",
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+  ],
+  "Harmonic Minor": [
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+    "G4","G4","F4","F4","D#4","D#4","D4","G4","G4","F4","F4","D#4","D#4","D4",
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+  ],
+  "Melodic Minor (ascending)": [
+    "C4","C4","G4","G4","A4","A4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+    "G4","G4","F4","F4","D#4","D#4","D4","G4","G4","F4","F4","D#4","D#4","D4",
+    "C4","C4","G4","G4","A4","A4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+  ],
+  Dorian: [
+    "C4","C4","G4","G4","A4","A4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+    "G4","G4","F4","F4","D#4","D#4","D4","G4","G4","F4","F4","D#4","D#4","D4",
+    "C4","C4","G4","G4","A4","A4","G4","F4","F4","D#4","D#4","D4","D4","C4",
+  ],
+  Phrygian: [
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","D#4","D#4","C#4","C#4","C4",
+    "G4","G4","F4","F4","D#4","D#4","C#4","G4","G4","F4","F4","D#4","D#4","C#4",
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","D#4","D#4","C#4","C#4","C4",
+  ],
+  Hijaz: [
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","E4","E4","C#4","C#4","C4",
+    "G4","G4","F4","F4","E4","E4","C#4","G4","G4","F4","F4","E4","E4","C#4",
+    "C4","C4","G4","G4","G#4","G#4","G4","F4","F4","E4","E4","C#4","C#4","C4",
+  ],
+};
+
+const JOY_GOLDEN: Record<string, string[]> = {
+  Major: ["C5", "B4", "A4", "G4", "F4", "E4", "D4", "C4"],
+  "Natural Minor": ["C5", "A#4", "G#4", "G4", "F4", "D#4", "D4", "C4"],
+  "Harmonic Minor": ["C5", "B4", "G#4", "G4", "F4", "D#4", "D4", "C4"],
+  "Melodic Minor (ascending)": ["C5", "B4", "A4", "G4", "F4", "D#4", "D4", "C4"],
+  Dorian: ["C5", "A#4", "A4", "G4", "F4", "D#4", "D4", "C4"],
+  Phrygian: ["C5", "A#4", "G#4", "G4", "F4", "D#4", "C#4", "C4"],
+  Hijaz: ["C5", "A#4", "G#4", "G4", "F4", "E4", "C#4", "C4"],
+};
+
+describe("substituteDegrees", () => {
   it("is deterministic", () => {
     for (const scale of CORE_SCALES) {
-      const a = transformMelody(JOY, scale);
-      const b = transformMelody(JOY, scale);
+      const a = substituteDegrees(JOY_TO_THE_WORLD, scale);
+      const b = substituteDegrees(JOY_TO_THE_WORLD, scale);
       expect(a, scale).toEqual(b);
     }
   });
 
   it("preserves note count for every core scale", () => {
     for (const scale of CORE_SCALES) {
-      expect(transformMelody(TWINKLE, scale), scale).toHaveLength(TWINKLE.length);
-      expect(transformMelody(JOY, scale), scale).toHaveLength(JOY.length);
+      expect(substituteDegrees(TWINKLE_TWINKLE, scale), scale).toHaveLength(TWINKLE_TWINKLE.notes.length);
+      expect(substituteDegrees(JOY_TO_THE_WORLD, scale), scale).toHaveLength(JOY_TO_THE_WORLD.notes.length);
     }
   });
 
-  it("keeps the tonic in place — the melody's degree-0 note never moves", () => {
-    // Twinkle starts on "do", scale degree 0, which is scaleIntervals[0] = 0
-    // in every scale by definition of "intervals from the tonic" — so the
-    // first note's absolute pitch must be identical across scale choices.
-    const firstNotes = CORE_SCALES.map((scale) => transformMelody(TWINKLE, scale)[0]);
-    expect(new Set(firstNotes).size, `tonic drifted across scales: ${firstNotes.join(", ")}`).toBe(1);
+  it("keeps the tonic in place — the melody's scaleStep-0 note never moves", () => {
+    // Every scale in SCALES maps degree 0 to interval 0 by definition, so
+    // whichever note carries scaleStep 0 must land on the same absolute
+    // pitch regardless of target scale -- checked at that note's actual
+    // array position, not assumed to be index 0 (Joy's tonic is index 7).
+    for (const melody of [TWINKLE_TWINKLE, JOY_TO_THE_WORLD]) {
+      const i = tonicIndex(melody);
+      const tonicPitches = CORE_SCALES.map((scale) => substituteDegrees(melody, scale)[i]);
+      expect(new Set(tonicPitches).size, `${melody.name} tonic drifted across scales: ${tonicPitches.join(", ")}`).toBe(1);
+    }
   });
 
   it("only emits pitches that are members of the target scale", () => {
     for (const scale of CORE_SCALES) {
       const intervals = EXPECTED_INTERVALS[scale];
-      for (const note of [...transformMelody(TWINKLE, scale), ...transformMelody(JOY, scale)]) {
+      for (const note of [...substituteDegrees(TWINKLE_TWINKLE, scale), ...substituteDegrees(JOY_TO_THE_WORLD, scale)]) {
         expect(intervals, `${note} under ${scale} is not in {${intervals.join(",")}}`).toContain(
           pitchClass(note),
         );
@@ -96,7 +160,7 @@ describe("transformMelody", () => {
     // Melodic Minor (ascending) at ti — Twinkle never reaches that degree,
     // so both pairs collapse to identical output there. Joy to the World's
     // descending scale hits every degree once, which is what separates them.
-    const outputs = CORE_SCALES.map((scale) => transformMelody(JOY, scale).join(" "));
+    const outputs = CORE_SCALES.map((scale) => substituteDegrees(JOY_TO_THE_WORLD, scale).join(" "));
     for (let i = 0; i < CORE_SCALES.length; i++) {
       for (let j = i + 1; j < CORE_SCALES.length; j++) {
         expect(
@@ -104,6 +168,13 @@ describe("transformMelody", () => {
           `${CORE_SCALES[i]} and ${CORE_SCALES[j]} produced identical output on Joy to the World: "${outputs[i]}"`,
         ).not.toBe(outputs[j]);
       }
+    }
+  });
+
+  it("matches the pre-migration transformMelody output exactly, for every core scale", () => {
+    for (const scale of CORE_SCALES) {
+      expect(substituteDegrees(TWINKLE_TWINKLE, scale), `Twinkle / ${scale}`).toEqual(TWINKLE_GOLDEN[scale]);
+      expect(substituteDegrees(JOY_TO_THE_WORLD, scale), `Joy / ${scale}`).toEqual(JOY_GOLDEN[scale]);
     }
   });
 });

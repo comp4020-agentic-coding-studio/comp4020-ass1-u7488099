@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
-import { TWINKLE_TWINKLE, pitches } from "../src/lib/melodies.ts";
+import { TWINKLE_TWINKLE } from "../src/lib/melodies.ts";
 
 // Assignment 1 spec (https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/assessments/assignment-1/):
 // "the visitor does something that changes what they see — state the core
@@ -16,23 +16,22 @@ import { TWINKLE_TWINKLE, pitches } from "../src/lib/melodies.ts";
 
 describe("scale transform", () => {
   it("remaps the same melody differently under different scales", async () => {
-    const modulePath = resolve("src/lib/scales.ts");
+    const modulePath = resolve("src/lib/transform.ts");
     expect(
       existsSync(modulePath),
-      `${modulePath} not found. Export transformMelody(notes: string[], scaleName: string): string[] from it, or update this test's import to match where you put it.`,
+      `${modulePath} not found. Export transformMelody(melody: Melody, targetScaleName: string): string[] from it, or update this test's import to match where you put it.`,
     ).toBe(true);
 
-    const { transformMelody } = await import("../src/lib/scales.ts");
+    const { transformMelody } = await import("../src/lib/transform.ts");
     // Full melody, not the "do do sol sol la la sol" excerpt — that excerpt
     // never touches re or mi, so it can't show Hijaz and Natural Minor
     // diverging. See melodies.ts.
-    const twinkleTwinkle = pitches(TWINKLE_TWINKLE);
 
-    const underMajor = transformMelody(twinkleTwinkle, "Major");
-    const underMinor = transformMelody(twinkleTwinkle, "Natural Minor");
+    const underMajor = transformMelody(TWINKLE_TWINKLE, "Major");
+    const underMinor = transformMelody(TWINKLE_TWINKLE, "Natural Minor");
 
-    expect(underMajor).toHaveLength(twinkleTwinkle.length);
-    expect(underMinor).toHaveLength(twinkleTwinkle.length);
+    expect(underMajor).toHaveLength(TWINKLE_TWINKLE.notes.length);
+    expect(underMinor).toHaveLength(TWINKLE_TWINKLE.notes.length);
     expect(underMinor).not.toEqual(underMajor);
   });
 });
