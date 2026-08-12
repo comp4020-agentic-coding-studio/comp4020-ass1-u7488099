@@ -156,6 +156,54 @@ means building legibly is part of building well.
 You don't need a name, a student number, or any identity file in the repo: we
 know whose repo it is. Spend the effort on the work.
 
+## One Melody, Many Worlds: project rules
+
+This week's prototype is a comparison, not a toy: the same melody rendered
+under different scales, holding everything except the scale fixed. These
+rules exist to keep that comparison honest and the scope small enough to
+finish.
+
+- **Controlled comparison.** Switching the scale for a given melody may only
+  change the pitches `transformMelody` outputs. Root/tonic pitch, octave
+  register, note count, and rhythm must stay identical across scale choices
+  --- don't add transpose, key, or tempo controls; they'd confound the one
+  variable this piece is about.
+- **`transformMelody` is pure and deterministic.** No `Date.now()`,
+  `Math.random()`, or hidden state. The same `(notes, scaleName)` input always
+  produces the same output array --- this is both a testability requirement
+  and a musical-integrity one, since the whole point is a controlled
+  comparison.
+- **Guaranteed scales: Major, Natural Minor, Hijaz** --- all 7-note, so no
+  octave-wrap-seam risk. **Experimental scales: Major Pentatonic, In Sen**
+  --- 5-note, so a scale-degree step can straddle a wrap seam and turn into a
+  leap the original melody never had. Don't commit to shipping these until
+  they've been listened to and judged recognisable enough to keep; if cut,
+  remove their `<option>`s rather than leaving dead entries in the picker.
+- **No cultural-essentialism in copy.** Never claim a scale alone makes a
+  melody "sound Chinese/Japanese/Arabic." Name scales by their music-theory
+  name first (Hijaz, In Sen, Major Pentatonic); any cultural association is
+  historical/associative context, stated as such, not an identity claim. Ask
+  before adding any copy that pairs a scale with an ethnicity or nationality.
+- **Scope lock.** The feature set is: a melody `<select>`
+  (`data-testid="melody-select"`), a scale `<select>`
+  (`data-testid="scale-select"`), a transformed-notes display
+  (`data-testid="transformed-notes"`), and a Play `<button>`
+  (`data-testid="play-button"`) --- nothing else. Animated
+  keyboard/waveform visualisation, multi-melody or multi-scale comparison,
+  custom scales, and tempo control all require my explicit go-ahead before
+  you build them, not agent initiative.
+- **No autoplay.** Changing a melody or scale selection must never trigger
+  sound; only pressing Play does.
+- **Real semantic controls.** The selects are actual `<select>` elements and
+  Play is an actual `<button>` --- keyboard operability comes free from the
+  element, don't rebuild it with a styled `<div>`.
+- **Mobile.** Both selects and Play must be reachable and usable one-handed at
+  390px wide with no horizontal scroll.
+- **No unnecessary runtime dependencies.** Web Audio and `<select>`/`<button>`
+  are platform-native and cover everything this prototype needs --- keep
+  `package.json`'s `dependencies` empty. Ask before adding a library for audio
+  or animation.
+
 ## This file is yours
 
 This CLAUDE.md is a starting point, not a fixed rulebook. As you learn what your
