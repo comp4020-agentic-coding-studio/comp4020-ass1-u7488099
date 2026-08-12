@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { TWINKLE_TWINKLE } from "../lib/melodies.ts";
 ---
 
 <!doctype html>
@@ -7,7 +8,7 @@ import "../styles/global.css";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>One Melody, Many Worlds</title>
   </head>
   <body>
     <header>
@@ -16,11 +17,82 @@ import "../styles/global.css";
       </nav>
     </header>
     <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
+      <h1>One Melody, Many Worlds</h1>
+      <p>
+        Pick a scale. The melody stays the same — same notes, same rhythm,
+        same starting pitch — only the scale each note is drawn from
+        changes. A scale is one ingredient of a musical tradition, not the
+        whole thing: this isn't "this melody, but Chinese/Japanese/Arabic,"
+        it's the same tune reinterpreted through a different set of
+        intervals.
+      </p>
+
+      <form>
+        <p>
+          <label>
+            Melody
+            <select data-testid="melody-select" name="melody">
+              <option value="twinkle">{TWINKLE_TWINKLE.name}</option>
+            </select>
+          </label>
+        </p>
+
+        <p>
+          <label>
+            Scale
+            <select data-testid="scale-select" name="scale">
+              <option value="Major">Major</option>
+              <option value="Natural Minor">Natural Minor</option>
+              <option value="Hijaz">Hijaz</option>
+            </select>
+          </label>
+        </p>
+
+        <p>
+          <button type="button" data-testid="play-button">Play</button>
+        </p>
+      </form>
+
+      <p>
+        Transformed notes:
+        <output data-testid="transformed-notes"></output>
       </p>
     </main>
+
+    <script>
+      import { transformMelody } from "../lib/scales.ts";
+      import { TWINKLE_TWINKLE, pitches } from "../lib/melodies.ts";
+      import { playNotes } from "../lib/audio.ts";
+
+      const melodies = { twinkle: TWINKLE_TWINKLE };
+
+      const melodySelect = document.querySelector<HTMLSelectElement>('[data-testid="melody-select"]')!;
+      const scaleSelect = document.querySelector<HTMLSelectElement>('[data-testid="scale-select"]')!;
+      const playButton = document.querySelector<HTMLButtonElement>('[data-testid="play-button"]')!;
+      const output = document.querySelector<HTMLOutputElement>('[data-testid="transformed-notes"]')!;
+
+      function currentMelody() {
+        return melodies[melodySelect.value as keyof typeof melodies];
+      }
+
+      function currentTransformedPitches(): string[] {
+        return transformMelody(pitches(currentMelody()), scaleSelect.value);
+      }
+
+      function render(): void {
+        output.textContent = currentTransformedPitches().join(" ");
+      }
+
+      melodySelect.addEventListener("change", render);
+      scaleSelect.addEventListener("change", render);
+
+      playButton.addEventListener("click", () => {
+        const melody = currentMelody();
+        const durations = melody.notes.map((note) => note.duration);
+        playNotes(currentTransformedPitches(), durations);
+      });
+
+      render();
+    </script>
   </body>
 </html>
