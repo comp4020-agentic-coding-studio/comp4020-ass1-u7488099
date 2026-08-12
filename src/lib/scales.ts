@@ -29,19 +29,21 @@ interface ParsedNote {
   octave: number;
 }
 
-function parseNote(note: string): ParsedNote {
+// Exported alongside transformMelody so quantize.ts's nearest-note family can
+// share the same note parsing/naming instead of duplicating it.
+export function parseNote(note: string): ParsedNote {
   const match = note.match(/^([A-G])(#|b)?(-?\d+)$/);
   if (!match) throw new Error(`unparseable note name: "${note}"`);
   const [, letter, accidental, octaveStr] = match;
   return { letter, accidental: (accidental ?? "") as ParsedNote["accidental"], octave: Number(octaveStr) };
 }
 
-function noteToSemitone(note: ParsedNote): number {
+export function noteToSemitone(note: ParsedNote): number {
   const offset = note.accidental === "#" ? 1 : note.accidental === "b" ? -1 : 0;
   return note.octave * 12 + NATURAL_SEMITONE[note.letter] + offset;
 }
 
-function semitoneToNoteName(semitone: number): string {
+export function semitoneToNoteName(semitone: number): string {
   const octave = Math.floor(semitone / 12);
   const pitchClass = ((semitone % 12) + 12) % 12;
   return `${CHROMATIC_NAMES[pitchClass]}${octave}`;

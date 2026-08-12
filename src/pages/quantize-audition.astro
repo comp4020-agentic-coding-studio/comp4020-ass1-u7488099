@@ -1,0 +1,53 @@
+---
+// TEMPORARY listening aid — not part of the shipped UI. Lets the 5-note
+// quantization candidates (Major Pentatonic, Minor Pentatonic, In Sen) be
+// heard against Twinkle before deciding which (if any) become user-facing.
+// Delete this file once that decision is made; it isn't linked from index.astro
+// and isn't wired into the main scale-select.
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quantization audition (temporary)</title>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary">
+        <a href="./">Home</a>
+      </nav>
+    </header>
+    <main>
+      <h1>Quantization audition (temporary)</h1>
+      <p>
+        Not part of the shipped UI. Plays Twinkle Twinkle Little Star quantized
+        to each 5-note candidate scale, using the existing audio playback code.
+      </p>
+
+      <p><button type="button" data-scale="">Play: original (unquantized)</button></p>
+      <p><button type="button" data-scale="Major Pentatonic">Play: Major Pentatonic</button></p>
+      <p><button type="button" data-scale="Minor Pentatonic">Play: Minor Pentatonic</button></p>
+      <p><button type="button" data-scale="In Sen">Play: In Sen</button></p>
+    </main>
+
+    <script>
+      import { quantizeMelody } from "../lib/quantize.ts";
+      import { TWINKLE_TWINKLE, pitches } from "../lib/melodies.ts";
+      import { playNotes } from "../lib/audio.ts";
+
+      const original = pitches(TWINKLE_TWINKLE);
+      const durations = TWINKLE_TWINKLE.notes.map((note) => note.duration);
+
+      document.querySelectorAll<HTMLButtonElement>("button[data-scale]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const scale = button.dataset.scale;
+          const notes = scale ? quantizeMelody(original, scale) : original;
+          playNotes(notes, durations);
+        });
+      });
+    </script>
+  </body>
+</html>
