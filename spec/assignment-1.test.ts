@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
+import { TWINKLE_TWINKLE, pitches } from "../src/lib/melodies.ts";
 
 // Assignment 1 spec (https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/assessments/assignment-1/):
 // "the visitor does something that changes what they see — state the core
@@ -22,7 +23,10 @@ describe("scale transform", () => {
     ).toBe(true);
 
     const { transformMelody } = await import("../src/lib/scales.ts");
-    const twinkleTwinkle = ["C4", "C4", "G4", "G4", "A4", "A4", "G4"];
+    // Full melody, not the "do do sol sol la la sol" excerpt — that excerpt
+    // never touches re or mi, so it can't show Hijaz and Natural Minor
+    // diverging. See melodies.ts.
+    const twinkleTwinkle = pitches(TWINKLE_TWINKLE);
 
     const underMajor = transformMelody(twinkleTwinkle, "Major");
     const underMinor = transformMelody(twinkleTwinkle, "Natural Minor");

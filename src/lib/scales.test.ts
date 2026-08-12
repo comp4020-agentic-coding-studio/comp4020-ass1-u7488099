@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TWINKLE_TWINKLE, pitches } from "./melodies.ts";
 import { transformMelody } from "./scales.ts";
 
 // Encodes the "controlled comparison" rule from CLAUDE.md: switching scales
@@ -6,7 +7,10 @@ import { transformMelody } from "./scales.ts";
 // the tonic (scale degree 0) lands on. transformMelody(notes, scaleName) is
 // yours to place/rename; update the import path above if it moves.
 
-const TWINKLE = ["C4", "C4", "G4", "G4", "A4", "A4", "G4"]; // do do sol sol la la sol, tonic-first
+// Full melody, not an excerpt — see melodies.ts for why: it needs to hit re
+// and mi repeatedly, not just do/sol/la, or Hijaz and Natural Minor can't be
+// told apart in the output.
+const TWINKLE = pitches(TWINKLE_TWINKLE);
 const CORE_SCALES = ["Major", "Natural Minor", "Hijaz"];
 
 // Semitone intervals from the tonic, duplicated here rather than imported so
