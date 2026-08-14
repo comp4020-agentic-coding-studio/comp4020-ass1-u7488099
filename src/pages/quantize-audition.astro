@@ -36,7 +36,7 @@ import "../styles/global.css";
     <script>
       import { TWINKLE_TWINKLE } from "../lib/melodies.ts";
       import { renderNative, transformMelody } from "../lib/transform.ts";
-      import { playNotes } from "../lib/audio.ts";
+      import { play } from "../lib/audio.ts";
 
       const durations = TWINKLE_TWINKLE.notes.map((note) => note.duration);
 
@@ -44,7 +44,7 @@ import "../styles/global.css";
         button.addEventListener("click", () => {
           const scale = button.dataset.scale;
           const notes = scale ? transformMelody(TWINKLE_TWINKLE, scale) : renderNative(TWINKLE_TWINKLE);
-          playNotes(notes, durations);
+          play(notes, durations);
         });
       });
     </script>

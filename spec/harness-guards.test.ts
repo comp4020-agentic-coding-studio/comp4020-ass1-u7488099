@@ -51,9 +51,11 @@ describe("semantic controls", () => {
         );
       }
     }
-    const play = doc.querySelector('[data-testid="play-button"]');
-    if (play) {
-      expect(play.tagName, '[data-testid="play-button"] must be a real <button>').toBe("BUTTON");
+    for (const testid of ["play-button", "stop-button"]) {
+      const el = doc.querySelector(`[data-testid="${testid}"]`);
+      if (el) {
+        expect(el.tagName, `[data-testid="${testid}"] must be a real <button>`).toBe("BUTTON");
+      }
     }
   });
 });

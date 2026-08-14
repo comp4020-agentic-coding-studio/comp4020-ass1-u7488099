@@ -187,8 +187,9 @@ finish.
 - **Scope lock.** The feature set is: a melody `<select>`
   (`data-testid="melody-select"`), a scale `<select>`
   (`data-testid="scale-select"`), a transformed-notes display
-  (`data-testid="transformed-notes"`), and a Play `<button>`
-  (`data-testid="play-button"`) --- nothing else. Animated
+  (`data-testid="transformed-notes"`), a Play `<button>`
+  (`data-testid="play-button"`), and a Stop `<button>`
+  (`data-testid="stop-button"`) --- nothing else. Animated
   keyboard/waveform visualisation, multi-melody or multi-scale comparison,
   custom scales, and tempo control all require my explicit go-ahead before
   you build them, not agent initiative.

@@ -58,6 +58,7 @@ import { JOY_TO_THE_WORLD, MO_LI_HUA, TWINKLE_TWINKLE } from "../lib/melodies.ts
 
         <p>
           <button type="button" data-testid="play-button">Play</button>
+          <button type="button" data-testid="stop-button">Stop</button>
         </p>
       </form>
 
@@ -70,13 +71,14 @@ import { JOY_TO_THE_WORLD, MO_LI_HUA, TWINKLE_TWINKLE } from "../lib/melodies.ts
     <script>
       import { JOY_TO_THE_WORLD, MO_LI_HUA, TWINKLE_TWINKLE } from "../lib/melodies.ts";
       import { transformMelody } from "../lib/transform.ts";
-      import { playNotes } from "../lib/audio.ts";
+      import { play, stop } from "../lib/audio.ts";
 
       const melodies = { twinkle: TWINKLE_TWINKLE, joy: JOY_TO_THE_WORLD, moliHua: MO_LI_HUA };
 
       const melodySelect = document.querySelector<HTMLSelectElement>('[data-testid="melody-select"]')!;
       const scaleSelect = document.querySelector<HTMLSelectElement>('[data-testid="scale-select"]')!;
       const playButton = document.querySelector<HTMLButtonElement>('[data-testid="play-button"]')!;
+      const stopButton = document.querySelector<HTMLButtonElement>('[data-testid="stop-button"]')!;
       const output = document.querySelector<HTMLOutputElement>('[data-testid="transformed-notes"]')!;
 
       function currentMelody() {
@@ -91,14 +93,21 @@ import { JOY_TO_THE_WORLD, MO_LI_HUA, TWINKLE_TWINKLE } from "../lib/melodies.ts
         output.textContent = currentTransformedPitches().join(" ");
       }
 
-      melodySelect.addEventListener("change", render);
-      scaleSelect.addEventListener("change", render);
+      melodySelect.addEventListener("change", () => {
+        stop();
+        render();
+      });
+      scaleSelect.addEventListener("change", () => {
+        stop();
+        render();
+      });
 
       playButton.addEventListener("click", () => {
         const melody = currentMelody();
         const durations = melody.notes.map((note) => note.duration);
-        playNotes(currentTransformedPitches(), durations);
+        play(currentTransformedPitches(), durations);
       });
+      stopButton.addEventListener("click", stop);
 
       render();
     </script>
