@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
+import { JOY_TO_THE_WORLD, MO_LI_HUA, TWINKLE_TWINKLE } from "../lib/melodies.ts";
 ---
 
 <!doctype html>
@@ -34,6 +34,7 @@ import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
             <select data-testid="melody-select" name="melody">
               <option value="twinkle">{TWINKLE_TWINKLE.name}</option>
               <option value="joy">{JOY_TO_THE_WORLD.name}</option>
+              <option value="moliHua">{MO_LI_HUA.name}</option>
             </select>
           </label>
         </p>
@@ -49,6 +50,8 @@ import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
               <option value="Dorian">Dorian</option>
               <option value="Phrygian">Phrygian</option>
               <option value="Hijaz">Hijaz</option>
+              <option value="Major Pentatonic">Major Pentatonic (experimental)</option>
+              <option value="In Sen">In Sen (experimental)</option>
             </select>
           </label>
         </p>
@@ -65,11 +68,11 @@ import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
     </main>
 
     <script>
-      import { JOY_TO_THE_WORLD, TWINKLE_TWINKLE } from "../lib/melodies.ts";
+      import { JOY_TO_THE_WORLD, MO_LI_HUA, TWINKLE_TWINKLE } from "../lib/melodies.ts";
       import { transformMelody } from "../lib/transform.ts";
       import { playNotes } from "../lib/audio.ts";
 
-      const melodies = { twinkle: TWINKLE_TWINKLE, joy: JOY_TO_THE_WORLD };
+      const melodies = { twinkle: TWINKLE_TWINKLE, joy: JOY_TO_THE_WORLD, moliHua: MO_LI_HUA };
 
       const melodySelect = document.querySelector<HTMLSelectElement>('[data-testid="melody-select"]')!;
       const scaleSelect = document.querySelector<HTMLSelectElement>('[data-testid="scale-select"]')!;

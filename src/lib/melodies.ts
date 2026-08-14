@@ -99,3 +99,51 @@ export const JOY_TO_THE_WORLD: Melody = {
   sourceScale: "Major",
   notes: JOY_TO_THE_WORLD_PHRASE,
 };
+
+// Mo Li Hua (茉莉花, "Jasmine Flower"), transcribed from the LilyPond source
+// on Wikipedia's "Jasmine Flower" article. Source scale is Major Pentatonic
+// (do/re/mi/sol/la only -- fa and ti never appear), unlike Twinkle/Joy which
+// are Major-sourced -- this is what makes it the melody that exercises 5->5
+// substitution and 5->7 quantization, rather than 7->7/7->5.
+//
+// The written score has a `\repeat volta 2` around the opening two measures;
+// MO_LI_HUA_OPENING is that block, unfolded by spreading it twice below
+// rather than writing it out twice literally. Two quarter rests (one per
+// opening repeat, end of measure 2) and one final half rest (end of measure
+// 12) are written explicitly with r(duration) rather than absorbed into the
+// preceding note -- absorbing them would change the audible rhythm by
+// turning silence into a sustained pitch.
+const MO_LI_HUA_OPENING: MelodyEvent[] = [
+  n(2, 1), n(2, 0.5), n(3, 0.5), n(4, 0.5), n(5, 0.5), n(5, 0.5),
+  n(4, 0.5), n(3, 1), n(3, 0.5), n(4, 0.5), n(3, 1), r(1),
+];
+
+const MO_LI_HUA_BODY: MelodyEvent[] = [
+  // Measure 3
+  n(3, 1), n(3, 1), n(3, 1), n(2, 0.5), n(3, 0.5),
+  // Measure 4
+  n(4, 1), n(4, 1), n(3, 2),
+  // Measure 5
+  n(2, 1), n(1, 0.5), n(2, 0.5), n(3, 1), n(2, 0.5), n(1, 0.5),
+  // Measure 6
+  n(0, 1), n(0, 0.5), n(1, 0.5), n(0, 2),
+  // Measure 7
+  n(2, 0.5), n(1, 0.5), n(0, 0.5), n(2, 0.5), n(1, 1.5), n(2, 0.5),
+  // Measure 8
+  n(3, 1), n(4, 0.5), n(5, 0.5), n(3, 2),
+  // Measure 9
+  n(1, 1), n(2, 0.5), n(3, 0.5), n(1, 0.5), n(2, 0.5), n(0, 0.5), n(-1, 0.5),
+  // Measure 10
+  n(-2, 2), n(-1, 1), n(0, 1),
+  // Measure 11
+  n(1, 1.5), n(2, 0.5), n(0, 0.5), n(1, 0.5), n(0, 0.5), n(-1, 0.5),
+  // Measure 12
+  n(-2, 2), r(2),
+];
+
+export const MO_LI_HUA: Melody = {
+  name: "Mo Li Hua (Jasmine Flower)",
+  tonic: "C4",
+  sourceScale: "Major Pentatonic",
+  notes: [...MO_LI_HUA_OPENING, ...MO_LI_HUA_OPENING, ...MO_LI_HUA_BODY],
+};
