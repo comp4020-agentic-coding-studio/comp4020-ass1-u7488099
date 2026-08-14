@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { BEAT_SECONDS, play, playerEvents, stop } from "./audio.ts";
+import { BEAT_SECONDS, play, playerEvents, playEvents, stop } from "./audio.ts";
 import { RENDERED_REST } from "./melodies.ts";
 
 // A fake rather than a real AudioContext -- jsdom/node don't implement Web
@@ -163,6 +163,79 @@ describe("play/stop", () => {
 
     expect(stopEvents).toEqual([{ reason: "stopped" }]);
 
+    playerEvents.removeEventListener("stop", record);
+  });
+});
+
+// playEvents is the generalized scheduling core play() now wraps -- these
+// tests exercise the property play()'s one-running-cursor loop could never
+// have: two events with the same (or overlapping) startSeconds must both
+// sound, neither merged nor dropped.
+describe("playEvents (polyphony)", () => {
+  afterEach(() => {
+    stop();
+    vi.useRealTimers();
+  });
+
+  it("schedules simultaneous notes at the same start time without merging or dropping either", () => {
+    const startIndex = oscillators.length;
+
+    playEvents([
+      { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+      { pitchName: "E4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+    ]);
+    const created = oscillators.slice(startIndex);
+
+    expect(created).toHaveLength(2);
+    expect(created[0].start).toHaveBeenCalledWith(0);
+    expect(created[1].start).toHaveBeenCalledWith(0);
+  });
+
+  it("preserves each event's own start/duration when events overlap partially", () => {
+    const startIndex = oscillators.length;
+
+    playEvents([
+      { pitchName: "C4", startSeconds: 0, durationSeconds: 2 * BEAT_SECONDS },
+      { pitchName: "E4", startSeconds: BEAT_SECONDS, durationSeconds: BEAT_SECONDS },
+    ]);
+    const created = oscillators.slice(startIndex);
+
+    expect(created[0].start).toHaveBeenCalledWith(0);
+    expect(created[0].stop).toHaveBeenCalledWith(2 * BEAT_SECONDS);
+    expect(created[1].start).toHaveBeenCalledWith(BEAT_SECONDS);
+    expect(created[1].stop).toHaveBeenCalledWith(2 * BEAT_SECONDS);
+  });
+
+  it("stop() silences every simultaneous voice, not just one", () => {
+    const startIndex = oscillators.length;
+
+    playEvents([
+      { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+      { pitchName: "E4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+      { pitchName: "G4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+    ]);
+    stop();
+    const created = oscillators.slice(startIndex);
+
+    expect(created).toHaveLength(3);
+    for (const oscillator of created) {
+      expect(oscillator.stop).toHaveBeenCalledWith(0.02);
+    }
+  });
+
+  it("dispatches a final stop (reason: ended) at the latest event's end, not the first", () => {
+    vi.useFakeTimers();
+    const stopEvents: unknown[] = [];
+    const record = (event: Event) => stopEvents.push((event as CustomEvent).detail);
+    playerEvents.addEventListener("stop", record);
+
+    playEvents([
+      { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+      { pitchName: "E4", startSeconds: 0, durationSeconds: 3 * BEAT_SECONDS },
+    ]);
+    vi.advanceTimersByTime(3 * BEAT_SECONDS * 1000 + 10);
+
+    expect(stopEvents).toEqual([{ reason: "ended" }]);
     playerEvents.removeEventListener("stop", record);
   });
 });
