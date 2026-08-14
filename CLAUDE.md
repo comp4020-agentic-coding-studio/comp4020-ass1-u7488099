@@ -203,6 +203,27 @@ finish.
   are platform-native and cover everything this prototype needs --- keep
   `package.json`'s `dependencies` empty. Ask before adding a library for audio
   or animation.
+- **Canonical-route transformation model.** The whole project operates only
+  in C, with no transpose/key support. Every transformation routes through
+  two fixed reference scales instead of quantizing the source melody directly
+  onto an arbitrary target: any 7-note source/target maps degree-for-degree
+  to/from Major (`scales.ts#substituteDegrees`); any 5-note source/target
+  maps degree-for-degree to/from Major Pentatonic; Major Pentatonic embeds
+  into Major identically (do/re/mi/sol/la keep the same semitones); and
+  Major → Major Pentatonic (`pentatonicBridge.ts#bridgeMajorIntoPentatonic`)
+  is the **only** lossy hop in the entire pipeline, since fa and ti have no
+  pentatonic slot. `transform.ts#transformMelody` composes these; don't add a
+  new cardinality-mismatch path that quantizes directly (`quantize.ts`'s
+  nearest-neighbor quantization is now only the `Chromatic / Free` fallback).
+  This replaced an earlier direct-quantization model after listening exposed
+  it splitting *genuinely shared* repeated degrees (Mo Li Hua's native
+  pentatonic "la la") as if they were incidental off-scale collisions,
+  turning a clean repeat into a different scale degree. Accepted, documented
+  tradeoff: a bridged fa/ti can still land on the same pitch as an unrelated
+  native degree once a *second* 5-note substitution follows (e.g. a
+  7-note-sourced melody → In Sen) -- covered by the existing "listen and
+  judge before shipping experimental scales" gate above, not separately
+  mitigated.
 
 ## This file is yours
 

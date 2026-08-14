@@ -5,6 +5,17 @@ import { substituteDegrees } from "./scales.ts";
 
 // Twinkle rendered in its own source scale -- the same absolute pitches the
 // old pitches(TWINKLE_TWINKLE) helper used to hand these tests directly.
+//
+// These are direct unit tests of quantizeToScale itself, which is still
+// correct on its own terms and still exercised for Chromatic / Free targets
+// (see transform.ts). It is no longer what transformMelody calls for
+// non-chromatic Minor Pentatonic/In Sen targets, though -- those now route
+// through pentatonicBridge.ts's canonical Major/Major Pentatonic bridge
+// instead, so TWINKLE_GOLDEN below (in particular "Minor Pentatonic" and
+// "In Sen") is a fact about quantizeToScale, not necessarily what
+// transformMelody produces for those targets. "Major Pentatonic" happens to
+// still match transformMelody's output too, since Twinkle's fa-fa run
+// bridges to the same E/G split either way (see transform.test.ts).
 const TWINKLE = substituteDegrees(TWINKLE_TWINKLE, TWINKLE_TWINKLE.sourceScale);
 const QUANTIZE_SCALES = ["Major Pentatonic", "Minor Pentatonic", "In Sen"];
 

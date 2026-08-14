@@ -1,15 +1,18 @@
-// Nearest-note quantization: a second transformation family, for target
-// scales with a different cardinality than the source melody's scale.
-// scales.ts#substituteDegrees's scale-degree substitution assumes matching
-// cardinality (each degree maps to one target interval); wrapping a
-// 7-degree melody directly around a 5-note scale can turn a step into a
-// leap the original never had. This family instead keeps every note's
-// absolute register and
-// only moves a pitch when it isn't already a member of the target scale --
-// to whichever member is nearest in semitones. Two different source
-// pitches landing on the same target pitch ("note collapsing") is an
-// expected, visible consequence of restricting a melody to a smaller
-// palette, not a bug to hide.
+// Nearest-note quantization. Historically this was transform.ts's family
+// for every unequal-cardinality pairing; it has since been narrowed to just
+// the `Chromatic / Free` fallback -- every other cross-cardinality pairing
+// (5-note <-> 7-note) now routes through the canonical Major / Major
+// Pentatonic bridge in pentatonicBridge.ts instead (see transform.ts). This
+// module's nearest-neighbor primitives (`nearestSignedOffset`,
+// `nearestOffsetAbove`, `nearestOffsetBelow`) are exported and reused by
+// that bridge, so the snapping/tie-break math still lives in exactly one
+// place.
+//
+// This family keeps every note's absolute register and only moves a pitch
+// when it isn't already a member of the target scale -- to whichever member
+// is nearest in semitones. Two different source pitches landing on the same
+// target pitch ("note collapsing") is an expected, visible consequence of
+// restricting a melody to a smaller palette, not a bug to hide.
 //
 // One case is worth actively fixing rather than just accepting, though: a
 // *repeated* source pitch that isn't legal (e.g. Twinkle's "fa fa" before
@@ -28,7 +31,7 @@ import { noteToSemitone, parseNote, SCALES, semitoneToNoteName, substituteDegree
 // `targetPitchClasses`, in range (-6, 6]. On an exact tie between two
 // equally-near members (one above, one below), the lower one wins --
 // documented, arbitrary, deterministic.
-function nearestSignedOffset(pitchClass: number, targetPitchClasses: number[]): number {
+export function nearestSignedOffset(pitchClass: number, targetPitchClasses: number[]): number {
   let bestOffset = Infinity;
   let bestDistance = Infinity;
   for (const target of targetPitchClasses) {
@@ -45,7 +48,7 @@ function nearestSignedOffset(pitchClass: number, targetPitchClasses: number[]): 
 
 // Smallest positive offset (1..11) that lands on a member of
 // `targetPitchClasses`, or null if none exists within an octave above.
-function nearestOffsetAbove(pitchClass: number, targetPitchClasses: number[]): number | null {
+export function nearestOffsetAbove(pitchClass: number, targetPitchClasses: number[]): number | null {
   for (let d = 1; d <= 11; d++) {
     if (targetPitchClasses.includes(((pitchClass + d) % 12 + 12) % 12)) return d;
   }
@@ -54,7 +57,7 @@ function nearestOffsetAbove(pitchClass: number, targetPitchClasses: number[]): n
 
 // Smallest-magnitude negative offset (-1..-11) that lands on a member of
 // `targetPitchClasses`, or null if none exists within an octave below.
-function nearestOffsetBelow(pitchClass: number, targetPitchClasses: number[]): number | null {
+export function nearestOffsetBelow(pitchClass: number, targetPitchClasses: number[]): number | null {
   for (let d = 1; d <= 11; d++) {
     if (targetPitchClasses.includes(((pitchClass - d) % 12 + 12) % 12)) return -d;
   }
@@ -154,8 +157,9 @@ export function quantizePitches(notes: string[], targetPitchClasses: number[]): 
 // absolute register to quantize from), then snaps each pitch not already
 // in targetScaleName onto the nearest member via the shared
 // nearestSignedOffset/splitRepeatedRun logic above. Works for any
-// cardinality pairing; transform.ts picks this over substituteDegrees
-// whenever cardinalities differ.
+// cardinality pairing, but transform.ts now only calls this for the
+// `Chromatic / Free` fallback -- every other cross-cardinality pairing goes
+// through pentatonicBridge.ts's canonical Major/Major Pentatonic route.
 export function quantizeToScale(melody: Melody, targetScaleName: string): string[] {
   const targetIntervals = SCALES[targetScaleName];
   if (!targetIntervals) throw new Error(`unknown scale: "${targetScaleName}"`);

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RENDERED_REST, type Melody } from "./melodies.ts";
+import { bridgeMajorIntoPentatonic, embedPentatonicIntoMajor } from "./pentatonicBridge.ts";
+import { substituteDegrees } from "./scales.ts";
 import { transformMelody } from "./transform.ts";
 
 // Synthetic, inline fixtures throughout -- these exercise cardinality
@@ -41,18 +43,26 @@ describe("transformMelody dispatch", () => {
     expect(out[0]).toBe("C4");
   });
 
-  it("quantizes 5-note source onto a 7-note target (unequal cardinality)", () => {
+  it("routes a 5-note source onto a 7-note target through the Major Pentatonic->Major embedding", () => {
     const out = transformMelody(melody("In Sen", [0, 1, 2, 3, 4]), "Major");
     expect(out).toHaveLength(5);
     const allowed = [0, 2, 4, 5, 7, 9, 11];
     for (const note of out) expect(allowed).toContain(pitchClass(note));
+    // Exact values: every 5-note source's degree indices route through the
+    // same fixed Major Pentatonic->Major relabel regardless of which 5-note
+    // scale it actually names -- do/re/mi/sol/la -> C4/D4/E4/G4/A4.
+    expect(out).toEqual(["C4", "D4", "E4", "G4", "A4"]);
   });
 
-  it("quantizes 7-note source onto a 5-note target (unequal cardinality)", () => {
+  it("routes a 7-note source onto a 5-note target through the Major->Major Pentatonic bridge", () => {
     const out = transformMelody(melody("Major", [0, 1, 2, 3, 4, 5, 6]), "In Sen");
     expect(out).toHaveLength(7);
     const allowed = [0, 1, 5, 7, 10];
     for (const note of out) expect(allowed).toContain(pitchClass(note));
+    // Exact values: do-re-mi-fa-sol-la-ti, where fa and ti are the only two
+    // bridged (non-identity) degrees -- fa lands on the mi slot (F4), ti
+    // lands on the do slot an octave up (C5).
+    expect(out).toEqual(["C4", "C#4", "F4", "F4", "G4", "A#4", "C5"]);
   });
 
   it("quantizes a Chromatic / Free source onto a 7-note target", () => {
@@ -169,6 +179,58 @@ describe("rests", () => {
       const restIndex = out.findIndex((pitch) => pitch === RENDERED_REST);
       expect(restIndex, targetScale).toBe(1);
       expect(m.notes[restIndex].duration, targetScale).toBe(2);
+    }
+  });
+});
+
+// Harness tests that would fail if a future change reintroduced ad-hoc
+// quantization into the dispatcher instead of routing through the
+// canonical Major/Major Pentatonic bridge (pentatonicBridge.ts).
+describe("canonical-route harness", () => {
+  it("matches manually composing the bridge functions with substituteDegrees, for representative 5->7 and 7->5 pairs", () => {
+    const fiveToSeven = melody("Minor Pentatonic", [0, 1, 2, 3, 4, 2, 0]);
+    const expectedFiveToSeven = substituteDegrees(
+      { ...fiveToSeven, sourceScale: "Major", notes: embedPentatonicIntoMajor(fiveToSeven.notes) },
+      "Hijaz",
+    );
+    expect(transformMelody(fiveToSeven, "Hijaz")).toEqual(expectedFiveToSeven);
+
+    const sevenToFive = melody("Dorian", [0, 3, 3, 6, 6, 4, 0]);
+    const expectedSevenToFive = substituteDegrees(
+      { ...sevenToFive, sourceScale: "Major Pentatonic", notes: bridgeMajorIntoPentatonic(sevenToFive.notes) },
+      "In Sen",
+    );
+    expect(transformMelody(sevenToFive, "In Sen")).toEqual(expectedSevenToFive);
+  });
+
+  it("never splits a repeated non-fa/non-ti degree from a 7-note source, regardless of target", () => {
+    // do/re/mi/sol/la (Major degrees 0,1,2,4,5) are identity-relabeled into
+    // Major Pentatonic with no run logic -- only fa (3) and ti (6) can ever
+    // be split. This is the concrete property the original Mo Li Hua bug
+    // violated (a repeated "la la" turned into two different pitches); a
+    // repeated safe degree must stay a repeated identical pitch under every
+    // 5-note target.
+    const safeDegrees = [0, 1, 2, 4, 5];
+    const targets = ["Major Pentatonic", "Minor Pentatonic", "In Sen"];
+    for (const degree of safeDegrees) {
+      const m = melody("Major", [degree, degree, degree]);
+      for (const target of targets) {
+        const out = transformMelody(m, target);
+        expect(new Set(out).size, `degree ${degree} -> ${target}`).toBe(1);
+      }
+    }
+  });
+
+  it("never splits a repeated degree from a 5-note source, regardless of target", () => {
+    // embedPentatonicIntoMajor is a pure relabel with no run logic at all,
+    // so this holds for every pentatonic degree, not just a safe subset.
+    const targets = ["Major", "Natural Minor", "Hijaz", "Major Pentatonic", "In Sen"];
+    for (const degree of [0, 1, 2, 3, 4]) {
+      const m = melody("In Sen", [degree, degree, degree]);
+      for (const target of targets) {
+        const out = transformMelody(m, target);
+        expect(new Set(out).size, `degree ${degree} -> ${target}`).toBe(1);
+      }
     }
   });
 });
