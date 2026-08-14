@@ -57,7 +57,7 @@ function pitchClass(note: string): number {
 // falls in the melody. Not assumed to be index 0: Joy to the World's tonic
 // is its last note (index 7), not its first.
 function tonicIndex(melody: typeof TWINKLE_TWINKLE): number {
-  const index = melody.notes.findIndex((note) => note.scaleStep === 0);
+  const index = melody.notes.findIndex((note) => note.type === "note" && note.scaleStep === 0);
   if (index === -1) throw new Error(`${melody.name} has no scaleStep-0 note`);
   return index;
 }

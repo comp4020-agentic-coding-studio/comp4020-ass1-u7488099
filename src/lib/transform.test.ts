@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Melody } from "./melodies.ts";
+import { RENDERED_REST, type Melody } from "./melodies.ts";
 import { transformMelody } from "./transform.ts";
 
 // Synthetic, inline fixtures throughout -- these exercise cardinality
@@ -18,7 +18,7 @@ function pitchClass(note: string): number {
   return ((base + offset) % 12 + 12) % 12;
 }
 
-const step = (scaleStep: number) => ({ scaleStep, duration: 1 });
+const step = (scaleStep: number) => ({ type: "note" as const, scaleStep, duration: 1 });
 
 function melody(sourceScale: string, scaleSteps: number[]): Melody {
   return { name: "synthetic fixture", tonic: "C4", sourceScale, notes: scaleSteps.map(step) };
@@ -86,5 +86,89 @@ describe("transformMelody dispatch", () => {
     // Major's degree 2 (semitone 4) differs from Natural Minor's (semitone 3).
     const firstNotePitches = targets.map((scale) => transformMelody(m, scale)[0]);
     expect(new Set(firstNotePitches).size).toBeGreaterThan(1);
+  });
+});
+
+describe("rests", () => {
+  const restMelody = (sourceScale: string): Melody => ({
+    name: "rest fixture",
+    tonic: "C4",
+    sourceScale,
+    notes: [
+      { type: "note", scaleStep: 0, duration: 1 },
+      { type: "rest", duration: 2 },
+      { type: "note", scaleStep: 2, duration: 1 },
+    ],
+  });
+
+  it("passes a rest through equal-cardinality substitution untouched", () => {
+    const out = transformMelody(restMelody("Major"), "Natural Minor");
+    expect(out).toHaveLength(3);
+    expect(out[1]).toBe(RENDERED_REST);
+    expect(out[0]).not.toBe(RENDERED_REST);
+    expect(out[2]).not.toBe(RENDERED_REST);
+  });
+
+  it("passes a rest through unequal-cardinality quantization untouched", () => {
+    const out = transformMelody(restMelody("Major"), "In Sen");
+    expect(out).toHaveLength(3);
+    expect(out[1]).toBe(RENDERED_REST);
+  });
+
+  it("a rest between two identical off-scale notes doesn't fuse them into one run", () => {
+    // Without the rest, two consecutive F4s (scaleStep 3 in Major) would be
+    // treated as a single repeated run and split across E4/G4 by
+    // splitRepeatedRun. A rest between them must break that grouping, so
+    // each F4 is quantized independently -- both still land on E4 (F4's
+    // nearest Major Pentatonic neighbour), but via the single-note path,
+    // not the run-splitting path.
+    const m: Melody = {
+      name: "rest between repeats",
+      tonic: "C4",
+      sourceScale: "Major",
+      notes: [
+        { type: "note", scaleStep: 3, duration: 1 },
+        { type: "rest", duration: 1 },
+        { type: "note", scaleStep: 3, duration: 1 },
+      ],
+    };
+    const out = transformMelody(m, "Major Pentatonic");
+    expect(out[1]).toBe(RENDERED_REST);
+    expect(out[0]).toBe(out[2]);
+    expect(out[0]).toBe("E4");
+  });
+
+  it("a preceding rest doesn't crash the run tie-break lookup", () => {
+    // Regression case for the precedingSemitone guard in quantizePitches:
+    // the note immediately before a repeated run is a rest, not a pitch.
+    const m: Melody = {
+      name: "repeat after rest",
+      tonic: "C4",
+      sourceScale: "Major",
+      notes: [
+        { type: "rest", duration: 1 },
+        { type: "note", scaleStep: 3, duration: 1 },
+        { type: "note", scaleStep: 3, duration: 1 },
+      ],
+    };
+    expect(() => transformMelody(m, "Major Pentatonic")).not.toThrow();
+    const out = transformMelody(m, "Major Pentatonic");
+    expect(out[0]).toBe(RENDERED_REST);
+    expect(out.slice(1)).toEqual(["E4", "G4"]);
+  });
+
+  it("preserves a rest's exact duration alongside its transformed pitch array", () => {
+    // transformMelody only returns pitch names; duration lives on the
+    // source melody.notes and is read positionally by callers (index.astro,
+    // audio.ts). This proves that positional correspondence survives
+    // transformation: the rest stays at the same index with the same
+    // duration, for both transform families.
+    const m = restMelody("Major");
+    for (const targetScale of ["Natural Minor", "In Sen"]) {
+      const out = transformMelody(m, targetScale);
+      const restIndex = out.findIndex((pitch) => pitch === RENDERED_REST);
+      expect(restIndex, targetScale).toBe(1);
+      expect(m.notes[restIndex].duration, targetScale).toBe(2);
+    }
   });
 });

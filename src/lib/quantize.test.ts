@@ -93,7 +93,7 @@ describe("quantizeToScale", () => {
   });
 
   it("keeps the tonic in place", () => {
-    const tonicIndex = TWINKLE_TWINKLE.notes.findIndex((note) => note.scaleStep === 0);
+    const tonicIndex = TWINKLE_TWINKLE.notes.findIndex((note) => note.type === "note" && note.scaleStep === 0);
     for (const scale of QUANTIZE_SCALES) {
       expect(quantizeToScale(TWINKLE_TWINKLE, scale)[tonicIndex], scale).toBe(TWINKLE[tonicIndex]);
     }

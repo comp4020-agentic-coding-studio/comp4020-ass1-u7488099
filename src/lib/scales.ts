@@ -6,7 +6,7 @@
 // back to itself by construction. See transform.ts for the dispatcher that
 // picks this substitution family over quantize.ts's nearest-pitch family.
 
-import type { Melody } from "./melodies.ts";
+import { isRest, RENDERED_REST, type Melody } from "./melodies.ts";
 
 const NATURAL_SEMITONE: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const CHROMATIC_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -73,7 +73,9 @@ export function substituteDegrees(melody: Melody, targetScaleName: string): stri
   const tonicSemitone = noteToSemitone(parseNote(melody.tonic));
   const cardinality = targetIntervals.length;
 
-  return melody.notes.map(({ scaleStep }) => {
+  return melody.notes.map((event) => {
+    if (isRest(event)) return RENDERED_REST;
+    const { scaleStep } = event;
     const degree = ((scaleStep % cardinality) + cardinality) % cardinality;
     const octaveShift = Math.floor(scaleStep / cardinality);
     return semitoneToNoteName(tonicSemitone + targetIntervals[degree] + 12 * octaveShift);

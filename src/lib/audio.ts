@@ -4,8 +4,10 @@
 // using each note's duration; only ever called from the Play button's click
 // handler, never on selection change (CLAUDE.md's "no autoplay" rule).
 
+import { RENDERED_REST } from "./melodies.ts";
+
 const NATURAL_SEMITONE: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-const BEAT_SECONDS = 0.4; // duration 1 (a quarter note) plays for this long
+export const BEAT_SECONDS = 0.4; // duration 1 (a quarter note) plays for this long
 const A4_SEMITONE = 57; // 4 * 12 + 9 — reference pitch for the frequency formula below
 
 function noteToFrequency(note: string): number {
@@ -23,6 +25,12 @@ export function playNotes(pitchNames: string[], durations: number[]): void {
 
   pitchNames.forEach((pitchName, i) => {
     const noteSeconds = durations[i] * BEAT_SECONDS;
+
+    if (pitchName === RENDERED_REST) {
+      time += noteSeconds;
+      return;
+    }
+
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = "sine";

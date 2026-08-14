@@ -8,18 +8,36 @@
 // nothing here uses yet.
 
 export interface MelodyNote {
+  type: "note";
   scaleStep: number; // signed, octave-aware step relative to the tonic in sourceScale; 0 = tonic
   duration: number; // beats: 1 = quarter note, 2 = half note
 }
+
+export interface MelodyRest {
+  type: "rest";
+  duration: number; // beats, same units as MelodyNote.duration
+}
+
+export type MelodyEvent = MelodyNote | MelodyRest;
+
+export function isRest(event: MelodyEvent): event is MelodyRest {
+  return event.type === "rest";
+}
+
+// Sentinel used wherever a rest is rendered into a pitch-name string[]
+// (substituteDegrees/quantizeToScale/transformMelody output). Can never
+// collide with a real note name -- note names always start with A-G.
+export const RENDERED_REST = "rest";
 
 export interface Melody {
   name: string;
   tonic: string; // absolute anchor note, e.g. "C4" -- scaleStep 0 always renders as this
   sourceScale: string; // key into scales.ts's SCALES -- the melody's genuine home scale
-  notes: MelodyNote[];
+  notes: MelodyEvent[];
 }
 
-const n = (scaleStep: number, duration: number): MelodyNote => ({ scaleStep, duration });
+const n = (scaleStep: number, duration: number): MelodyNote => ({ type: "note", scaleStep, duration });
+export const r = (duration: number): MelodyRest => ({ type: "rest", duration });
 
 // Standard 12-measure AABA form in 4/4, tonic-first. Covers do/re/mi/fa/sol/la
 // (never ti) -- in particular re and mi, the two degrees where Hijaz and

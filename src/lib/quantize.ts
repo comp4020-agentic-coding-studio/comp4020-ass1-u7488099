@@ -21,7 +21,7 @@
 // of collapsing it onto one. A single (non-repeated) missing note still
 // just takes the nearest legal tone, unchanged.
 
-import type { Melody } from "./melodies.ts";
+import { RENDERED_REST, type Melody } from "./melodies.ts";
 import { noteToSemitone, parseNote, SCALES, semitoneToNoteName, substituteDegrees } from "./scales.ts";
 
 // Signed semitone offset from `pitchClass` to the nearest member of
@@ -108,6 +108,12 @@ export function quantizePitches(notes: string[], targetPitchClasses: number[]): 
   const result: string[] = Array.from({ length: notes.length });
   let i = 0;
   while (i < notes.length) {
+    if (notes[i] === RENDERED_REST) {
+      result[i] = RENDERED_REST;
+      i++;
+      continue;
+    }
+
     const absoluteSemitone = noteToSemitone(parseNote(notes[i]));
     const pitchClass = ((absoluteSemitone % 12) + 12) % 12;
 
@@ -118,7 +124,11 @@ export function quantizePitches(notes: string[], targetPitchClasses: number[]): 
     }
 
     let j = i;
-    while (j + 1 < notes.length && noteToSemitone(parseNote(notes[j + 1])) === absoluteSemitone) {
+    while (
+      j + 1 < notes.length &&
+      notes[j + 1] !== RENDERED_REST &&
+      noteToSemitone(parseNote(notes[j + 1])) === absoluteSemitone
+    ) {
       j++;
     }
     const runLength = j - i + 1;
@@ -126,7 +136,8 @@ export function quantizePitches(notes: string[], targetPitchClasses: number[]): 
     if (runLength === 1) {
       result[i] = semitoneToNoteName(absoluteSemitone + nearestSignedOffset(pitchClass, targetPitchClasses));
     } else {
-      const precedingSemitone = i > 0 ? noteToSemitone(parseNote(result[i - 1])) : null;
+      const precedingSemitone =
+        i > 0 && result[i - 1] !== RENDERED_REST ? noteToSemitone(parseNote(result[i - 1])) : null;
       const run = splitRepeatedRun(absoluteSemitone, pitchClass, targetPitchClasses, runLength, precedingSemitone);
       for (let k = 0; k < runLength; k++) result[i + k] = run[k];
     }
