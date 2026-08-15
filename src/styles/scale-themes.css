@@ -58,6 +58,18 @@
     transparent 24px
   );
   --theme-texture-strength: 0.6;
+  --theme-art-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cpath d='M0,140 C150,40 300,220 450,110 C600,20 700,160 800,90' fill='none' stroke='%23c9a227' stroke-width='2' opacity='0.8'/%3E%3Cpath d='M0,280 C180,340 320,200 480,300 C620,380 700,260 800,320' fill='none' stroke='%23c9a227' stroke-width='1.5' opacity='0.6'/%3E%3C/svg%3E");
+  --theme-art-position: center;
+  --theme-art-size: cover;
+
+  /* "cover" needs to compute against the actual viewport, not .world's own
+     much-taller scrollable box, or the phrase-line sweep never appears in
+     the first screenful -- see .world::after's comment in index.astro. */
+  --theme-art-attachment: fixed;
+  --theme-art-opacity: 0.5;
+  --theme-art-blend-mode: normal;
+  --theme-piano-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100'%3E%3Cpath d='M10,90 C10,40 60,10 130,10 C170,10 190,30 190,55 L190,90 Z' fill='%232a2410'/%3E%3C/svg%3E");
+  --theme-piano-art-opacity: 0.12;
 }
 
 /* western-minor family: Natural, Harmonic, and Melodic Minor share the same
@@ -94,6 +106,18 @@
     transparent 24px
   );
   --theme-texture-strength: 0.5;
+
+  /* A genuinely large, round moon disc + soft outer glow + one drifting
+     cloud -- fixed pixel sizes (not `cover`) so the disc always reads as
+     round regardless of .world's aspect ratio. */
+  --theme-art-image:
+    radial-gradient(circle, #eef1fa 0%, #c7d2e8 45%, transparent 72%),
+    radial-gradient(circle, rgb(200 212 235 / 35%) 0%, transparent 60%),
+    radial-gradient(ellipse, rgb(230 233 240 / 35%), transparent 70%);
+  --theme-art-position: calc(100% - 2rem) 2rem, calc(100% - 2rem) 2rem, calc(100% - 7rem) 5rem;
+  --theme-art-size: 220px 220px, 380px 380px, 160px 45px;
+  --theme-art-opacity: 0.85;
+  --theme-art-blend-mode: normal;
 }
 
 /* Harmonic Minor -- the raised 7th (leading tone) is the textbook reason it
@@ -123,6 +147,26 @@
     radial-gradient(ellipse at 50% 30%, rgb(212 162 78 / 8%), transparent 60%),
     radial-gradient(ellipse at center, transparent 40%, rgb(0 0 0 / 55%) 100%);
   --theme-texture-strength: 0.8;
+
+  /* One tall flourish SVG with a gold hairline scroll-motif band at both
+     its top and bottom edge (transparent middle) stretched to fill
+     .world's full height, plus two curtain-fold gradient stripes confined
+     to the far left/right edges. */
+  --theme-art-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300'%3E%3Cpath d='M0,20 C100,5 200,35 300,20 C400,5 500,35 600,20 C700,5 800,35 900,20 C1000,5 1100,35 1200,20' fill='none' stroke='%23d4a24e' stroke-width='2' opacity='0.55'/%3E%3Cpath d='M0,280 C100,295 200,265 300,280 C400,295 500,265 600,280 C700,295 800,265 900,280 C1000,295 1100,265 1200,280' fill='none' stroke='%23d4a24e' stroke-width='2' opacity='0.55'/%3E%3C/svg%3E"),
+    linear-gradient(to right, rgb(0 0 0 / 50%) 0%, transparent 15%),
+    linear-gradient(to left, rgb(0 0 0 / 50%) 0%, transparent 15%);
+  --theme-art-position: center, center, center;
+  --theme-art-size: 100% 100%, 100% 100%, 100% 100%;
+
+  /* Same fold-visibility reasoning as Major above: the flourish bands and
+     curtain-fold stripes are sized as fractions of the whole composition,
+     so they need the viewport as their positioning area, not .world's full
+     scrollable height, to land at the actual top/bottom/side edges of the
+     first screen. */
+  --theme-art-attachment: fixed;
+  --theme-art-opacity: 0.7;
+  --theme-art-blend-mode: normal;
 }
 
 /* Melodic Minor (ascending) -- raised 6th AND 7th (this project's ascending-
@@ -152,6 +196,17 @@
     radial-gradient(circle at 30% 20%, rgb(139 127 199 / 12%), transparent 55%),
     radial-gradient(circle at 75% 80%, rgb(90 84 128 / 12%), transparent 55%);
   --theme-texture-strength: 0.55;
+
+  /* Three long diagonal soft-edged ribbons, wider and bolder than the fine
+     texture layer underneath -- the "flowing nocturnal mist" idea. */
+  --theme-art-image:
+    linear-gradient(125deg, transparent 0%, rgb(139 127 199 / 35%) 15%, transparent 35%),
+    linear-gradient(115deg, transparent 20%, rgb(168 155 217 / 30%) 38%, transparent 58%),
+    linear-gradient(135deg, transparent 45%, rgb(90 84 128 / 28%) 62%, transparent 82%);
+  --theme-art-position: center, center, center;
+  --theme-art-size: 100% 100%, 100% 100%, 100% 100%;
+  --theme-art-opacity: 0.55;
+  --theme-art-blend-mode: normal;
 }
 
 /* western-modal family: Dorian and Phrygian share the same Western modal
@@ -191,6 +246,22 @@
     transparent 22px
   );
   --theme-texture-strength: 0.5;
+
+  /* A low horizon/hill-line silhouette along the bottom edge, plus a small
+     foliate corner ornament -- explicitly no medieval-fantasy iconography
+     (no towers, castles, or dragons), just a leaf-line + horizon idea. */
+  --theme-art-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200'%3E%3Cpath d='M0,140 C150,100 300,160 450,120 C600,80 750,150 900,110 C1000,85 1100,130 1200,100 L1200,200 L0,200 Z' fill='%236fae8c'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M10,110 C10,70 30,40 60,25 C55,55 45,80 20,100' fill='none' stroke='%233f5548' stroke-width='3' opacity='0.5'/%3E%3Cpath d='M60,25 C75,45 80,70 70,95' fill='none' stroke='%233f5548' stroke-width='3' opacity='0.5'/%3E%3C/svg%3E");
+  --theme-art-position: bottom center, top left;
+  --theme-art-size: 100% 30%, 130px 130px;
+
+  /* The horizon strip is "the bottom 30% of the composition" -- against
+     .world's own multi-thousand-px box that band never reaches the first
+     screenful, so it needs the viewport as its positioning area instead. */
+  --theme-art-attachment: fixed;
+  --theme-art-opacity: 0.6;
+  --theme-art-blend-mode: normal;
 }
 
 /* Phrygian -- the flattened 2nd is the real interval driving its compressed,
@@ -229,6 +300,14 @@
     ),
     radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / 50%) 100%);
   --theme-texture-strength: 0.65;
+
+  /* An abstract angular repeating lattice -- rhythmic geometry, not
+     floral -- bolder than the fine diagonal hairline texture underneath. */
+  --theme-art-image: repeating-conic-gradient(from 45deg, rgb(166 61 46 / 40%) 0deg 6deg, transparent 6deg 30deg);
+  --theme-art-position: center;
+  --theme-art-size: 100% 100%;
+  --theme-art-opacity: 0.5;
+  --theme-art-blend-mode: normal;
 }
 
 /* Hijaz -- the augmented 2nd between its 2nd and 3rd degrees (1.5 tones) is
@@ -275,6 +354,22 @@
       transparent 26px
     );
   --theme-texture-strength: 0.7;
+
+  /* A large-scale 8-point-star repeating motif, denser/higher-contrast
+     than the fine worldTexture lattice underneath. Masked so it fades out
+     toward the center -- the panels sit in the pattern's "quiet" zone,
+     the geometry reads loudest in the gutters/padding around them. The
+     matching waveform-panel border frame lives in index.astro, next to
+     .waveform-panel's other structural rules. */
+  --theme-art-image: repeating-conic-gradient(from 0deg, rgb(217 164 65 / 55%) 0deg 5deg, transparent 5deg 22.5deg);
+  --theme-art-position: center;
+  --theme-art-size: 100% 100%;
+  --theme-art-opacity: 0.6;
+  --theme-art-blend-mode: normal;
+}
+
+[data-scale-theme="hijaz"] .world::after {
+  mask-image: radial-gradient(ellipse 60% 55% at center, transparent 40%, black 85%);
 }
 
 /* Major Pentatonic -- deliberately Chinese-ink-informed for THIS explainer,
@@ -307,6 +402,18 @@
     radial-gradient(ellipse 60% 40% at 20% 15%, rgb(58 58 58 / 6%), transparent 60%),
     radial-gradient(ellipse 50% 35% at 80% 70%, rgb(58 58 58 / 5%), transparent 65%);
   --theme-texture-strength: 0.5;
+
+  /* Bespoke ink-mountains asset -- --theme-art-image intentionally omitted
+     (falls back to `none` via .world::after's var(..., none) guard) until
+     src/assets/art/major-pentatonic-mountains.svg exists on disk per the
+     art-direction plan's generation spec; themes.ts already records the
+     intended url() so the two files stay in sync once the asset lands.
+     Position/size/opacity are wired up now so only the image reference
+     itself needs adding. */
+  --theme-art-position: bottom center;
+  --theme-art-size: 120% auto;
+  --theme-art-opacity: 0.85;
+  --theme-art-blend-mode: multiply;
 }
 
 /* In Sen -- deliberately Japanese-ink-informed for THIS explainer, same
@@ -336,4 +443,59 @@
   --theme-key-active-black: #c98a99;
   --theme-world-texture: radial-gradient(ellipse 55% 40% at 75% 20%, rgb(74 70 66 / 4.5%), transparent 65%);
   --theme-texture-strength: 0.35;
+
+  /* Bespoke sakura-branch asset -- --theme-art-image intentionally omitted
+     until src/assets/art/in-sen-sakura-branch.svg exists on disk, same
+     sequencing note as Major Pentatonic above. */
+  --theme-art-position: top right;
+  --theme-art-size: 30vw auto;
+  --theme-art-opacity: 0.9;
+  --theme-art-blend-mode: normal;
+}
+
+/* Mobile (<=600px): .world and .world-inner are effectively the same
+   width, so there's no side gutter to place art in -- placement leans on
+   repositioning/cropping via background-position/background-size rather
+   than shrinking a desktop composition down to illegibility. Opacity
+   itself is only dimmed slightly (see index.astro's .world::after mobile
+   rule) since the brief explicitly asks that mobile art stay visible, not
+   fade away. */
+@media (width <= 37.5em) {
+  [data-scale-theme="major"] {
+    --theme-art-size: 200% auto;
+  }
+
+  [data-scale-theme="natural-minor"] {
+    --theme-art-image:
+      radial-gradient(circle, #eef1fa 0%, #c7d2e8 45%, transparent 72%),
+      radial-gradient(circle, rgb(200 212 235 / 35%) 0%, transparent 60%);
+    --theme-art-position: 50% 2rem, 50% 2rem;
+    --theme-art-size: 180px 180px, 300px 300px;
+  }
+
+  [data-scale-theme="harmonic-minor"] {
+    --theme-art-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300'%3E%3Cpath d='M0,20 C100,5 200,35 300,20 C400,5 500,35 600,20 C700,5 800,35 900,20 C1000,5 1100,35 1200,20' fill='none' stroke='%23d4a24e' stroke-width='2' opacity='0.55'/%3E%3C/svg%3E");
+    --theme-art-position: top center;
+    --theme-art-size: 220% auto;
+  }
+
+  [data-scale-theme="melodic-minor"] {
+    --theme-art-image: linear-gradient(125deg, transparent 0%, rgb(139 127 199 / 35%) 15%, transparent 35%);
+    --theme-art-position: center;
+    --theme-art-size: 100% 100%;
+  }
+
+  [data-scale-theme="dorian"] {
+    --theme-art-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200'%3E%3Cpath d='M0,140 C150,100 300,160 450,120 C600,80 750,150 900,110 C1000,85 1100,130 1200,100 L1200,200 L0,200 Z' fill='%236fae8c'/%3E%3C/svg%3E");
+    --theme-art-position: bottom center;
+    --theme-art-size: 100% 25%;
+  }
+
+  [data-scale-theme="major-pentatonic"] {
+    --theme-art-size: 220% auto;
+  }
+
+  [data-scale-theme="in-sen"] {
+    --theme-art-size: 55vw auto;
+  }
 }

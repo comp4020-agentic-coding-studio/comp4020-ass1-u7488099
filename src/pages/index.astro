@@ -135,6 +135,7 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
 
           <section class="panel" aria-label="Composition editor">
             <h2>Composition editor</h2>
+            <p class="piece-caption" data-testid="piece-caption" hidden></p>
             <p>
               Click or drag across a row to place a note; click a note to remove
               it. Arrow keys move focus, Enter/Space places or removes a note, and
@@ -205,6 +206,7 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
       const joyButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-joy"]')!;
       const moliHuaButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-moli-hua"]')!;
       const transformedOutput = document.querySelector<HTMLOutputElement>('[data-testid="editor-transformed-notes"]')!;
+      const pieceCaption = document.querySelector<HTMLParagraphElement>('[data-testid="piece-caption"]')!;
       const keyboardEl = document.querySelector<HTMLDivElement>('[data-testid="editor-keyboard"]')!;
       const waveformCanvas = document.querySelector<HTMLCanvasElement>('[data-testid="editor-waveform"]')!;
       const waveformCtx = waveformCanvas.getContext("2d")!;
@@ -216,13 +218,23 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
 
       let composition: Composition = createEmptyComposition(sourceSelect.value);
 
+      // Which named piece (if any) is currently loaded -- display state only,
+      // entirely separate from `composition`/melodies.ts/transform.ts. Only
+      // the Mo Li Hua preset button ever sets this to a non-null value; every
+      // other mutation of `composition` clears it via setComposition below,
+      // since editing the grid or loading a different preset means whatever
+      // was loaded no longer describes what's on screen.
+      let activePieceLabel: string | null = null;
+
       // Every mutation of `composition` routes through here so playback is
       // always stopped first -- editing while a performance is running would
       // otherwise let the played audio drift out of sync with what's now
-      // displayed on the grid.
+      // displayed on the grid. Also the single chokepoint for clearing piece
+      // identity: any edit invalidates "this is still Mo Li Hua."
       function setComposition(next: Composition): void {
         stop();
         composition = next;
+        activePieceLabel = null;
       }
 
       // Roving-tabindex focus position per block -- independent of Composition,
@@ -264,6 +276,15 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         );
         renderTransformedNotesText();
         applyTheme(); // every call site that can change targetSelect.value already calls renderAll()
+        updatePieceCaption();
+      }
+
+      // Piece identity is decoupled from scale theme on purpose: Mo Li Hua's
+      // caption depends only on activePieceLabel, never on which Target
+      // style/theme happens to be selected.
+      function updatePieceCaption(): void {
+        pieceCaption.textContent = activePieceLabel ?? "";
+        pieceCaption.hidden = activePieceLabel === null;
       }
 
       function renderTransformedNotesText(): void {
@@ -769,7 +790,14 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
 
       twinkleButton.addEventListener("click", () => loadPreset(TWINKLE_TWINKLE));
       joyButton.addEventListener("click", () => loadPreset(JOY_TO_THE_WORLD));
-      moliHuaButton.addEventListener("click", () => loadPreset(MO_LI_HUA));
+      // Only this preset carries a piece identity: loadPreset (via
+      // setComposition) already clears activePieceLabel, so it's re-set
+      // here, after loading, and the caption re-rendered to match.
+      moliHuaButton.addEventListener("click", () => {
+        loadPreset(MO_LI_HUA);
+        activePieceLabel = "茉莉花";
+        updatePieceCaption();
+      });
 
       // Target style is pure render/UI state, never assigned onto
       // `composition` -- changing it can only ever move where notes are
@@ -837,6 +865,38 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         opacity: var(--theme-texture-strength, 0.5);
       }
 
+      /* The bolder art-direction layer, painted after (so visually on top
+         of) ::before's fine texture, still behind .world-inner's z-index: 1
+         content. Each theme sets its own --theme-art-* values in
+         scale-themes.css; the defaults here keep it fully inert until a
+         theme opts in.
+
+         --theme-art-attachment defaults to "scroll", under which cover/
+         percentage sizing and positioning are computed against .world's own
+         box -- fine for themes whose art is fixed-px (Natural Minor's moon)
+         or a repeating procedural gradient with no source aspect ratio
+         (Melodic Minor, Phrygian, Hijaz). But .world is far taller than
+         either viewport once the Composition editor's grids render, so a
+         handful of themes (Major, Harmonic Minor, Dorian) whose art is a
+         real SVG image sized/positioned as if against one screenful need
+         "fixed" instead, which switches the positioning area to the actual
+         viewport per the CSS Backgrounds spec -- otherwise their art only
+         becomes visible far down the page instead of in the first fold. */
+      .world::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image: var(--theme-art-image, none);
+        background-position: var(--theme-art-position, center);
+        background-size: var(--theme-art-size, cover);
+        background-repeat: no-repeat;
+        background-attachment: var(--theme-art-attachment, scroll);
+        background-blend-mode: var(--theme-art-blend-mode, normal);
+        opacity: var(--theme-art-opacity, 0);
+      }
+
       .world-inner {
         position: relative;
         z-index: 1;
@@ -860,6 +920,17 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         margin: 0 0 0.75rem;
         font-size: 1.05rem;
         letter-spacing: 0.02em;
+      }
+
+      /* Piece-title caption, shown only while Mo Li Hua's preset is loaded --
+         plain system-font Unicode text at piece-title scale, styled like a
+         museum-label/liner-notes caption, not a stylized "calligraphy" font
+         pretending to be historical artwork. */
+      .piece-caption {
+        margin: -0.35rem 0 0.75rem;
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        color: var(--theme-accent, #888);
       }
 
       /* Presets, restyled as track cards rather than a flat button row --
@@ -1011,6 +1082,26 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         opacity: calc(var(--theme-texture-strength, 0.5) * 0.7);
       }
 
+      /* The three themes whose art is meant to sit directly behind the
+         canvas (mountains, sakura branch, geometric frame) drop the card
+         fill so .world::after's art layer shows straight through instead
+         of hiding behind an opaque panel. */
+      [data-scale-theme="major-pentatonic"] .waveform-panel,
+      [data-scale-theme="in-sen"] .waveform-panel,
+      [data-scale-theme="hijaz"] .waveform-panel {
+        background: transparent;
+        box-shadow: none;
+      }
+
+      /* Hijaz: the waveform sits inside a geometric frame rather than a
+         plain rounded rectangle -- border-image builds the star-lattice
+         motif directly from a conic-gradient, no asset file needed. */
+      [data-scale-theme="hijaz"] .waveform-panel {
+        border-width: 6px;
+        border-style: solid;
+        border-image: repeating-conic-gradient(from 45deg, #d9a441 0deg 12deg, #8f2d2d 12deg 24deg) 30;
+      }
+
       /* No overflow-x wrapper needed for the canvas itself -- it has no
          fixed-width children to overflow, it just respects width: 100%
          directly; its backing resolution is set from this rendered size in
@@ -1030,6 +1121,7 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
          wider than a narrow viewport -- scrolls internally, same pattern as
          .grid-scroll, rather than causing page-level horizontal scroll. */
       .piano-scroll {
+        position: relative;
         box-sizing: border-box;
         overflow-x: auto;
         border: 1px solid var(--theme-border, #ccc);
@@ -1037,6 +1129,26 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         background: var(--theme-surface, #fff);
         box-shadow: 0 4px 16px var(--theme-shadow, rgba(0, 0, 0, 0.12));
         padding: 0.75rem;
+      }
+
+      /* Major's small piano-lid silhouette, scoped to this panel only --
+         inert (--theme-piano-art defaults to none) for every other theme. */
+      .piano-scroll::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image: var(--theme-piano-art, none);
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        opacity: var(--theme-piano-art-opacity, 0);
+      }
+
+      .piano-scroll > .piano {
+        position: relative;
+        z-index: 1;
       }
 
       .blocks {
@@ -1078,6 +1190,20 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
 
         .world::before {
           opacity: calc(var(--theme-texture-strength, 0.5) * 0.5);
+        }
+
+        .world::after {
+          opacity: calc(var(--theme-art-opacity, 0) * 0.85);
+        }
+
+        .piano-scroll::after {
+          background-image: none;
+        }
+
+        [data-scale-theme="hijaz"] .waveform-panel {
+          border-width: 4px;
+          border-image: none;
+          border-color: var(--theme-accent, #d9a441);
         }
 
         [data-testid="editor-waveform"] {

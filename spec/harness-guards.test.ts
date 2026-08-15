@@ -135,3 +135,20 @@ describe("interactive region lives inside the theme scope", () => {
     }
   });
 });
+
+// Art-direction pass 2: Mo Li Hua's piece-title caption is display state
+// (activePieceLabel), never scale/theme identity -- it must default to
+// hidden so no static build output ever shows it without the click-driven
+// script running first.
+describe("piece caption defaults hidden", () => {
+  it("ships [data-testid=\"piece-caption\"] hidden by default, once it exists", () => {
+    const distPath = resolve("dist/index.html");
+    if (!existsSync(distPath)) return; // covered by the "built the page" check above
+
+    const doc = new JSDOM(readFileSync(distPath, "utf8")).window.document;
+    const caption = doc.querySelector('[data-testid="piece-caption"]');
+    if (!caption) return; // this stage may not have shipped yet
+
+    expect(caption.hasAttribute("hidden"), '[data-testid="piece-caption"] must default to hidden').toBe(true);
+  });
+});

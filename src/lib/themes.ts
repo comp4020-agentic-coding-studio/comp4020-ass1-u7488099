@@ -36,6 +36,18 @@ export interface ThemeTokens {
   shadow: string;
   worldTexture: string;
   textureStrength: number;
+  // Art-direction pass 2: a second, bolder decorative layer on top of
+  // worldTexture's fine hairline/mist texture. artImage may be a gradient
+  // stack (Natural Minor's moon, Melodic Minor's ribbons, Dorian's horizon,
+  // Phrygian's lattice, Hijaz's star-motif, Major's phrase-lines) or a
+  // url() reference to a bundled SVG asset (Major Pentatonic's mountains,
+  // In Sen's sakura branch) -- index.astro never branches on which; both
+  // compose through the same --theme-art-* custom properties.
+  artImage: string;
+  artPosition: string;
+  artSize: string;
+  artOpacity: number;
+  artBlendMode: string;
 }
 
 export interface ThemeDefinition {
@@ -71,6 +83,12 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "repeating-linear-gradient(0deg, rgba(201,162,39,0.05) 0px, rgba(201,162,39,0.05) 1px, transparent 1px, transparent 24px)",
       textureStrength: 0.6,
+      artImage:
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cpath d='M0,140 C150,40 300,220 450,110 C600,20 700,160 800,90' fill='none' stroke='%23c9a227' stroke-width='2' opacity='0.8'/%3E%3Cpath d='M0,280 C180,340 320,200 480,300 C620,380 700,260 800,320' fill='none' stroke='%23c9a227' stroke-width='1.5' opacity='0.6'/%3E%3C/svg%3E\")",
+      artPosition: "center",
+      artSize: "cover",
+      artOpacity: 0.5,
+      artBlendMode: "normal",
     },
   },
   "Natural Minor": {
@@ -97,6 +115,12 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "repeating-linear-gradient(0deg, rgba(143,163,199,0.05) 0px, rgba(143,163,199,0.05) 1px, transparent 1px, transparent 24px)",
       textureStrength: 0.5,
+      artImage:
+        "radial-gradient(circle, #eef1fa 0%, #c7d2e8 45%, transparent 72%), radial-gradient(circle, rgba(200,212,235,0.35) 0%, transparent 60%), radial-gradient(ellipse, rgba(230,233,240,0.35), transparent 70%)",
+      artPosition: "calc(100% - 2rem) 2rem, calc(100% - 2rem) 2rem, calc(100% - 7rem) 5rem",
+      artSize: "220px 220px, 380px 380px, 160px 45px",
+      artOpacity: 0.85,
+      artBlendMode: "normal",
     },
   },
   "Harmonic Minor": {
@@ -123,6 +147,12 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "radial-gradient(ellipse at 50% 30%, rgba(212,162,78,0.08), transparent 60%), radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)",
       textureStrength: 0.8,
+      artImage:
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300'%3E%3Cpath d='M0,20 C100,5 200,35 300,20 C400,5 500,35 600,20 C700,5 800,35 900,20 C1000,5 1100,35 1200,20' fill='none' stroke='%23d4a24e' stroke-width='2' opacity='0.55'/%3E%3Cpath d='M0,280 C100,295 200,265 300,280 C400,295 500,265 600,280 C700,295 800,265 900,280 C1000,295 1100,265 1200,280' fill='none' stroke='%23d4a24e' stroke-width='2' opacity='0.55'/%3E%3C/svg%3E\"), linear-gradient(to right, rgba(0,0,0,0.5) 0%, transparent 15%), linear-gradient(to left, rgba(0,0,0,0.5) 0%, transparent 15%)",
+      artPosition: "center, center, center",
+      artSize: "100% 100%, 100% 100%, 100% 100%",
+      artOpacity: 0.7,
+      artBlendMode: "normal",
     },
   },
   "Melodic Minor (ascending)": {
@@ -149,6 +179,12 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "radial-gradient(circle at 30% 20%, rgba(139,127,199,0.12), transparent 55%), radial-gradient(circle at 75% 80%, rgba(90,84,128,0.12), transparent 55%)",
       textureStrength: 0.55,
+      artImage:
+        "linear-gradient(125deg, transparent 0%, rgba(139,127,199,0.35) 15%, transparent 35%), linear-gradient(115deg, transparent 20%, rgba(168,155,217,0.3) 38%, transparent 58%), linear-gradient(135deg, transparent 45%, rgba(90,84,128,0.28) 62%, transparent 82%)",
+      artPosition: "center, center, center",
+      artSize: "100% 100%, 100% 100%, 100% 100%",
+      artOpacity: 0.55,
+      artBlendMode: "normal",
     },
   },
   Dorian: {
@@ -175,6 +211,12 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "repeating-linear-gradient(0deg, rgba(111,174,140,0.06) 0px, rgba(111,174,140,0.06) 1px, transparent 1px, transparent 22px)",
       textureStrength: 0.5,
+      artImage:
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200'%3E%3Cpath d='M0,140 C150,100 300,160 450,120 C600,80 750,150 900,110 C1000,85 1100,130 1200,100 L1200,200 L0,200 Z' fill='%236fae8c'/%3E%3C/svg%3E\"), url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M10,110 C10,70 30,40 60,25 C55,55 45,80 20,100' fill='none' stroke='%233f5548' stroke-width='3' opacity='0.5'/%3E%3Cpath d='M60,25 C75,45 80,70 70,95' fill='none' stroke='%233f5548' stroke-width='3' opacity='0.5'/%3E%3C/svg%3E\")",
+      artPosition: "bottom center, top left",
+      artSize: "100% 30%, 130px 130px",
+      artOpacity: 0.6,
+      artBlendMode: "normal",
     },
   },
   Phrygian: {
@@ -201,6 +243,11 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "repeating-linear-gradient(35deg, rgba(166,61,46,0.07) 0px, rgba(166,61,46,0.07) 1px, transparent 1px, transparent 18px), radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.5) 100%)",
       textureStrength: 0.65,
+      artImage: "repeating-conic-gradient(from 45deg, rgba(166,61,46,0.4) 0deg 6deg, transparent 6deg 30deg)",
+      artPosition: "center",
+      artSize: "100% 100%",
+      artOpacity: 0.5,
+      artBlendMode: "normal",
     },
   },
   Hijaz: {
@@ -227,6 +274,11 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "repeating-linear-gradient(45deg, rgba(217,164,65,0.06) 0px, rgba(217,164,65,0.06) 2px, transparent 2px, transparent 26px), repeating-linear-gradient(-45deg, rgba(217,164,65,0.06) 0px, rgba(217,164,65,0.06) 2px, transparent 2px, transparent 26px)",
       textureStrength: 0.7,
+      artImage: "repeating-conic-gradient(from 0deg, rgba(217,164,65,0.55) 0deg 5deg, transparent 5deg 22.5deg)",
+      artPosition: "center",
+      artSize: "100% 100%",
+      artOpacity: 0.6,
+      artBlendMode: "normal",
     },
   },
   "Major Pentatonic": {
@@ -253,6 +305,11 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       worldTexture:
         "radial-gradient(ellipse 60% 40% at 20% 15%, rgba(58,58,58,0.06), transparent 60%), radial-gradient(ellipse 50% 35% at 80% 70%, rgba(58,58,58,0.05), transparent 65%)",
       textureStrength: 0.5,
+      artImage: 'url("../assets/art/major-pentatonic-mountains.svg")',
+      artPosition: "bottom center",
+      artSize: "120% auto",
+      artOpacity: 0.85,
+      artBlendMode: "multiply",
     },
   },
   "In Sen": {
@@ -278,6 +335,11 @@ export const SCALE_THEMES: Record<string, ThemeDefinition> = {
       shadow: "rgba(74,70,66,0.12)",
       worldTexture: "radial-gradient(ellipse 55% 40% at 75% 20%, rgba(74,70,66,0.045), transparent 65%)",
       textureStrength: 0.35,
+      artImage: 'url("../assets/art/in-sen-sakura-branch.svg")',
+      artPosition: "top right",
+      artSize: "30vw auto",
+      artOpacity: 0.9,
+      artBlendMode: "normal",
     },
   },
 };

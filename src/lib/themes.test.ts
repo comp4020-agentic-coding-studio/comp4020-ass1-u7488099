@@ -56,6 +56,11 @@ describe("themeForScale", () => {
         "shadow",
         "worldTexture",
         "textureStrength",
+        "artImage",
+        "artPosition",
+        "artSize",
+        "artOpacity",
+        "artBlendMode",
       ];
       for (const key of tokenKeys) {
         const value = theme.tokens[key];
