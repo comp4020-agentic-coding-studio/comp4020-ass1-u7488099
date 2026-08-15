@@ -104,7 +104,7 @@ describe("clampDragEnd", () => {
   it("clamps to the grid bounds when there is no obstacle", () => {
     const c = composition([]);
     expect(clampDragEnd(c, 0, 4, -5)).toBe(0);
-    expect(clampDragEnd(c, 0, 4, 99999)).toBe(127);
+    expect(clampDragEnd(c, 0, 4, 99999)).toBe(TOTAL_STEPS - 1);
   });
 });
 
@@ -155,9 +155,10 @@ describe("resizeNote", () => {
   });
 
   it("clamps growth at the grid's edge", () => {
-    const c = composition([note(2, 124, 2)]);
-    const result = resizeNote(c, 2, 124, 10);
-    expect(result.notes).toEqual([note(2, 124, 4)]); // 124..127, the last legal step
+    const start = TOTAL_STEPS - 4;
+    const c = composition([note(2, start, 2)]);
+    const result = resizeNote(c, 2, start, 10);
+    expect(result.notes).toEqual([note(2, start, 4)]); // last 4 steps, ending at TOTAL_STEPS - 1
   });
 
   it("clamps growth against the next same-row note", () => {
@@ -201,15 +202,15 @@ describe("stepForBlockColumn", () => {
     expect(stepForBlockColumn(0, 1)).toBe(1);
   });
 
-  it("maps the final cell of block 1 to startStep 31", () => {
-    expect(stepForBlockColumn(0, STEPS_PER_BLOCK - 1)).toBe(31);
+  it("maps the final cell of block 1 to the last step before block 2", () => {
+    expect(stepForBlockColumn(0, STEPS_PER_BLOCK - 1)).toBe(STEPS_PER_BLOCK - 1);
   });
 
-  it("maps the first cell of block 2 to startStep 32", () => {
-    expect(stepForBlockColumn(1, 0)).toBe(32);
+  it("maps the first cell of block 2 to startStep STEPS_PER_BLOCK", () => {
+    expect(stepForBlockColumn(1, 0)).toBe(STEPS_PER_BLOCK);
   });
 
-  it("maps the final playable cell (block 4, last column) to startStep 127", () => {
+  it("maps the final playable cell (last block, last column) to TOTAL_STEPS - 1", () => {
     expect(stepForBlockColumn(BLOCKS - 1, STEPS_PER_BLOCK - 1)).toBe(TOTAL_STEPS - 1);
   });
 
@@ -237,16 +238,12 @@ describe("stepForBlockColumn", () => {
     expect(Math.max(...steps)).toBe(TOTAL_STEPS - 1);
   });
 
-  it("each block covers exactly 32 consecutive playable columns", () => {
-    expect(STEPS_PER_BLOCK).toBe(32);
-    expect(stepForBlockColumn(0, 0)).toBe(0);
-    expect(stepForBlockColumn(0, 31)).toBe(31);
-    expect(stepForBlockColumn(1, 0)).toBe(32);
-    expect(stepForBlockColumn(1, 31)).toBe(63);
-    expect(stepForBlockColumn(2, 0)).toBe(64);
-    expect(stepForBlockColumn(2, 31)).toBe(95);
-    expect(stepForBlockColumn(3, 0)).toBe(96);
-    expect(stepForBlockColumn(3, 31)).toBe(127);
+  it("each block covers exactly STEPS_PER_BLOCK consecutive playable columns", () => {
+    expect(STEPS_PER_BLOCK).toBe(TOTAL_STEPS / BLOCKS);
+    for (let blockIndex = 0; blockIndex < BLOCKS; blockIndex++) {
+      expect(stepForBlockColumn(blockIndex, 0)).toBe(blockIndex * STEPS_PER_BLOCK);
+      expect(stepForBlockColumn(blockIndex, STEPS_PER_BLOCK - 1)).toBe((blockIndex + 1) * STEPS_PER_BLOCK - 1);
+    }
   });
 
   it("allows placing a note at step 0", () => {
@@ -255,10 +252,10 @@ describe("stepForBlockColumn", () => {
     expect(result.notes).toEqual([note(0, 0, 1)]);
   });
 
-  it("allows placing a note at step 127, the final semiquaver of bar 8", () => {
+  it("allows placing a note at the final semiquaver of the last bar", () => {
     const c = composition([]);
     const lastStep = stepForBlockColumn(BLOCKS - 1, STEPS_PER_BLOCK - 1);
     const result = commitDrag(c, 0, lastStep, lastStep);
-    expect(result.notes).toEqual([note(0, 127, 1)]);
+    expect(result.notes).toEqual([note(0, TOTAL_STEPS - 1, 1)]);
   });
 });

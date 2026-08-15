@@ -4,6 +4,7 @@ import {
   type Composition,
   type CompositionNote,
   createEmptyComposition,
+  pitchRowsForComposition,
   pitchRowsForScale,
   renderComposition,
   sequentialToComposition,
@@ -12,7 +13,7 @@ import {
   transformCompositionNoteToTargetStep,
   transformCompositionToTarget,
 } from "./composition.ts";
-import { r, type Melody, type MelodyNote } from "./melodies.ts";
+import { isRest, JOY_TO_THE_WORLD, MO_LI_HUA, r, TWINKLE_TWINKLE, type Melody, type MelodyNote } from "./melodies.ts";
 import { transformMelody } from "./transform.ts";
 
 const n = (scaleStep: number, duration: number): MelodyNote => ({ type: "note", scaleStep, duration });
@@ -66,6 +67,75 @@ describe("sequentialToComposition", () => {
   it("produces an empty composition for an all-rest melody", () => {
     const melody: Melody = { name: "silent", tonic: "C4", sourceScale: "Major", notes: [r(4)] };
     expect(sequentialToComposition(melody).notes).toEqual([]);
+  });
+});
+
+describe("sequentialToComposition on the real presets", () => {
+  it("TWINKLE_TWINKLE: converts every non-rest note, none dropped", () => {
+    const expectedNoteCount = TWINKLE_TWINKLE.notes.filter((event) => !isRest(event)).length;
+    const composition = sequentialToComposition(TWINKLE_TWINKLE);
+
+    expect(composition.sourceScale).toBe("Major");
+    expect(composition.notes).toHaveLength(expectedNoteCount);
+    expect(composition.notes[0]).toEqual(note(0, 0, STEPS_PER_BEAT));
+  });
+
+  it("JOY_TO_THE_WORLD: descends stepwise from scaleStep 7 to 0, one beat apart", () => {
+    const composition = sequentialToComposition(JOY_TO_THE_WORLD);
+
+    expect(composition.notes.map((n) => n.scaleStep)).toEqual([7, 6, 5, 4, 3, 2, 1, 0]);
+    expect(composition.notes[0]).toEqual(note(7, 0, STEPS_PER_BEAT));
+    expect(composition.notes.at(-1)).toEqual(note(0, 7 * STEPS_PER_BEAT, 2 * STEPS_PER_BEAT));
+  });
+
+  it("MO_LI_HUA: keeps its below-tonic scaleSteps and leaves every explicit rest as a silent gap", () => {
+    const composition = sequentialToComposition(MO_LI_HUA);
+
+    expect(composition.sourceScale).toBe("Major Pentatonic");
+    const scaleSteps = composition.notes.map((n) => n.scaleStep);
+    expect(Math.min(...scaleSteps)).toBe(-2);
+    expect(Math.max(...scaleSteps)).toBe(5);
+
+    // Walk the source melody's own cursor to find each rest's exact window,
+    // and assert no composition note sounds during it -- this is the actual
+    // invariant sequentialToComposition guarantees, computed from the
+    // melody itself rather than a hand-derived step number.
+    let cursor = 0;
+    for (const event of MO_LI_HUA.notes) {
+      const lengthSteps = event.duration * STEPS_PER_BEAT;
+      if (isRest(event)) {
+        const soundingDuringRest = composition.notes.some(
+          (n) => n.startStep < cursor + lengthSteps && n.startStep + n.lengthSteps > cursor,
+        );
+        expect(soundingDuringRest).toBe(false);
+      }
+      cursor += lengthSteps;
+    }
+  });
+});
+
+describe("pitchRowsForComposition", () => {
+  it("returns the unwidened default for an empty composition", () => {
+    expect(pitchRowsForComposition(createEmptyComposition("Major Pentatonic"))).toEqual(
+      pitchRowsForScale("Major Pentatonic"),
+    );
+  });
+
+  it("returns the unwidened default when every note already fits inside it", () => {
+    const composition = sequentialToComposition(TWINKLE_TWINKLE);
+    expect(pitchRowsForComposition(composition)).toEqual(pitchRowsForScale("Major"));
+  });
+
+  it("widens downward to include a below-tonic scaleStep without narrowing the default's top", () => {
+    const composition = sequentialToComposition(MO_LI_HUA);
+    const rows = pitchRowsForComposition(composition);
+    const defaultRows = pitchRowsForScale("Major Pentatonic");
+
+    expect(Math.min(...rows)).toBeLessThanOrEqual(-2);
+    expect(Math.max(...rows)).toBe(defaultRows.at(-1));
+    expect(rows).toEqual(
+      Array.from({ length: Math.max(...rows) - Math.min(...rows) + 1 }, (_, i) => Math.min(...rows) + i),
+    );
   });
 });
 

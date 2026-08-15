@@ -23,6 +23,16 @@ import "../styles/global.css";
         Shift + Arrow resizes one.
       </p>
 
+      <section aria-label="Presets">
+        <h2>Presets</h2>
+        <p>
+          <button type="button" data-testid="editor-preset-twinkle">Twinkle Twinkle Little Star</button>
+          <button type="button" data-testid="editor-preset-joy">Joy to the World</button>
+          <button type="button" data-testid="editor-preset-moli-hua">Mo Li Hua / 茉莉花</button>
+          <button type="button" data-testid="editor-clear-button">Clear / New Composition</button>
+        </p>
+      </section>
+
       <form>
         <p>
           <label>
@@ -64,7 +74,6 @@ import "../styles/global.css";
         </p>
 
         <p>
-          <button type="button" data-testid="editor-clear-button">Clear</button>
           <button type="button" data-testid="editor-play-button">Play</button>
           <button type="button" data-testid="editor-stop-button">Stop</button>
         </p>
@@ -96,8 +105,9 @@ import "../styles/global.css";
         BARS,
         type Composition,
         createEmptyComposition,
-        pitchRowsForScale,
+        pitchRowsForComposition,
         renderComposition,
+        sequentialToComposition,
         STEPS_PER_BAR,
         STEPS_PER_BEAT,
         transformCompositionToTarget,
@@ -114,6 +124,7 @@ import "../styles/global.css";
         STEPS_PER_BLOCK,
       } from "../lib/editorGrid.ts";
       import { BEAT_SECONDS, playEvents, stop } from "../lib/audio.ts";
+      import { JOY_TO_THE_WORLD, MO_LI_HUA, type Melody, TWINKLE_TWINKLE } from "../lib/melodies.ts";
 
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
@@ -122,6 +133,9 @@ import "../styles/global.css";
       const clearButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-clear-button"]')!;
       const playButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-play-button"]')!;
       const stopButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-stop-button"]')!;
+      const twinkleButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-twinkle"]')!;
+      const joyButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-joy"]')!;
+      const moliHuaButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-moli-hua"]')!;
       const transformedOutput = document.querySelector<HTMLOutputElement>('[data-testid="editor-transformed-notes"]')!;
       const blockContainers = Array.from(
         { length: BLOCKS },
@@ -157,7 +171,7 @@ import "../styles/global.css";
       let drag: DragState | null = null;
 
       function currentRows(): number[] {
-        return pitchRowsForScale(composition.sourceScale).slice().sort((a, b) => b - a);
+        return pitchRowsForComposition(composition).slice().sort((a, b) => b - a);
       }
 
       // Whether a distinct target style is selected -- the single switch
@@ -172,7 +186,7 @@ import "../styles/global.css";
         const rows = currentRows();
         const transformed = showTransformed() ? transformCompositionToTarget(composition, targetSelect.value) : null;
         const targetRows = transformed
-          ? pitchRowsForScale(targetSelect.value).slice().sort((a, b) => b - a)
+          ? pitchRowsForComposition(transformed).slice().sort((a, b) => b - a)
           : [];
         blockContainers.forEach((container, blockIndex) =>
           renderBlock(container, blockIndex, rows, transformed, targetRows),
@@ -481,8 +495,29 @@ import "../styles/global.css";
 
       clearButton.addEventListener("click", () => {
         setComposition(createEmptyComposition(composition.sourceScale));
+        targetSelect.value = composition.sourceScale;
         renderAll();
       });
+
+      // Loads a preset melody straight into the editor: auto-selects Source
+      // Style to match, resets Target Style to the same value so the user
+      // hears/sees the original first, and replaces (never merges with)
+      // whatever was on the grid before -- setComposition assigns a wholly
+      // new Composition, and stops playback first, same as every other
+      // mutation. Once loaded, the notes are ordinary CompositionNote
+      // entries with no special-casing, so they're editable like anything
+      // hand-drawn.
+      function loadPreset(melody: Melody): void {
+        setComposition(sequentialToComposition(melody));
+        sourceSelect.value = melody.sourceScale;
+        targetSelect.value = melody.sourceScale;
+        for (const key of Object.keys(focused)) delete focused[Number(key)];
+        renderAll();
+      }
+
+      twinkleButton.addEventListener("click", () => loadPreset(TWINKLE_TWINKLE));
+      joyButton.addEventListener("click", () => loadPreset(JOY_TO_THE_WORLD));
+      moliHuaButton.addEventListener("click", () => loadPreset(MO_LI_HUA));
 
       // Target style is pure render/UI state, never assigned onto
       // `composition` -- changing it can only ever move where notes are

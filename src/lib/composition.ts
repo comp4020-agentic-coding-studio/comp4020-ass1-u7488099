@@ -10,7 +10,7 @@ import { isRest, type Melody } from "./melodies.ts";
 import { noteToSemitone, parseNote, SCALES } from "./scales.ts";
 import { transformMelody } from "./transform.ts";
 
-export const BARS = 8;
+export const BARS = 16;
 export const STEPS_PER_BAR = 16; // 4/4, sixteenth-note resolution
 export const STEPS_PER_BEAT = 4;
 export const TOTAL_STEPS = BARS * STEPS_PER_BAR; // 128
@@ -39,14 +39,29 @@ export function createEmptyComposition(sourceScale: string): Composition {
 
 // The grid's available pitch rows for a source style: two octaves,
 // tonic-up (scaleStep 0 through 2*cardinality - 1). A sensible default
-// window for freeform composition, not sized to fit every preset's full
-// register -- Mo Li Hua's body dips to scaleStep -2, outside this window.
-// Shifting the viewport to fit a loaded preset's register is future work,
-// since presets aren't wired into the editor yet.
+// window for freeform composition and for any composition that stays
+// within it -- a loaded preset whose register dips below the tonic (e.g.
+// Mo Li Hua's scaleStep -2) needs pitchRowsForComposition below instead,
+// which widens this default rather than replacing it.
 export function pitchRowsForScale(sourceScale: string): number[] {
   const cardinality = SCALES[sourceScale]?.length;
   if (cardinality === undefined) throw new Error(`unknown scale: "${sourceScale}"`);
   return Array.from({ length: cardinality * 2 }, (_, row) => row);
+}
+
+// The grid's row window for a *specific* composition: pitchRowsForScale's
+// tonic-up default, widened (never narrowed) just enough to include every
+// scaleStep the composition actually uses. A composition that stays within
+// the default two-octave window (true for any hand-drawn composition, and
+// for most presets) renders identically to pitchRowsForScale; only a preset
+// like Mo Li Hua, whose body dips below the tonic, grows the window.
+export function pitchRowsForComposition(composition: Composition): number[] {
+  const base = pitchRowsForScale(composition.sourceScale);
+  if (composition.notes.length === 0) return base;
+  const steps = composition.notes.map((note) => note.scaleStep);
+  const start = Math.min(base[0], ...steps);
+  const end = Math.max(base[base.length - 1], ...steps);
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
 // One-way: a preset's sequential MelodyEvent[] -> the editor's
