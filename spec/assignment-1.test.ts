@@ -43,19 +43,28 @@ describe("scale transform: UI hooks", () => {
     expect(existsSync(distPath)).toBe(true);
   });
 
-  it("exposes a melody selector, a scale selector, and a transformed-notes display", () => {
+  // Post-consolidation (single-page editor), melody selection is a preset
+  // button rather than a <select>, and scale selection is a Source/Target
+  // Style pair rather than one scale-select -- same contract as before
+  // (a way to pick a melody, a way to pick a style, and somewhere the
+  // remapped notes show up), just against the hooks that actually ship now.
+  it("exposes a melody preset, a style selector, and a transformed-notes display", () => {
     const doc = new JSDOM(readFileSync(distPath, "utf8")).window.document;
     expect(
-      doc.querySelector('[data-testid="melody-select"]'),
-      "no [data-testid=\"melody-select\"] — the visitor needs to pick a melody",
+      doc.querySelector('[data-testid="editor-preset-twinkle"]'),
+      "no [data-testid=\"editor-preset-twinkle\"] — the visitor needs to pick a melody",
     ).toBeTruthy();
     expect(
-      doc.querySelector('[data-testid="scale-select"]'),
-      "no [data-testid=\"scale-select\"] — the visitor needs to pick a scale",
+      doc.querySelector('[data-testid="editor-source-select"]'),
+      "no [data-testid=\"editor-source-select\"] — the visitor needs to pick a style",
     ).toBeTruthy();
     expect(
-      doc.querySelector('[data-testid="transformed-notes"]'),
-      "no [data-testid=\"transformed-notes\"] — where the remapped notes for the current melody+scale show up",
+      doc.querySelector('[data-testid="editor-target-select"]'),
+      "no [data-testid=\"editor-target-select\"] — the visitor needs to pick a target style",
+    ).toBeTruthy();
+    expect(
+      doc.querySelector('[data-testid="editor-transformed-notes"]'),
+      "no [data-testid=\"editor-transformed-notes\"] — where the remapped notes for the current composition+style show up",
     ).toBeTruthy();
   });
 });

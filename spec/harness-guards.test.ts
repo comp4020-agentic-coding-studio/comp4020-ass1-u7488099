@@ -43,7 +43,7 @@ describe("semantic controls", () => {
     if (!existsSync(distPath)) return; // covered by the "built the page" check above
 
     const doc = new JSDOM(readFileSync(distPath, "utf8")).window.document;
-    for (const testid of ["melody-select", "scale-select"]) {
+    for (const testid of ["editor-source-select", "editor-target-select"]) {
       const el = doc.querySelector(`[data-testid="${testid}"]`);
       if (el) {
         expect(el.tagName, `[data-testid="${testid}"] must be a real <select>, not a styled <div>`).toBe(
@@ -51,7 +51,7 @@ describe("semantic controls", () => {
         );
       }
     }
-    for (const testid of ["play-button", "stop-button"]) {
+    for (const testid of ["editor-play-button", "editor-stop-button"]) {
       const el = doc.querySelector(`[data-testid="${testid}"]`);
       if (el) {
         expect(el.tagName, `[data-testid="${testid}"] must be a real <button>`).toBe("BUTTON");
