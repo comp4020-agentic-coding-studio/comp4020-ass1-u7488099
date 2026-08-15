@@ -44,6 +44,8 @@ import "../styles/global.css";
 
         <p>
           <button type="button" data-testid="editor-clear-button">Clear</button>
+          <button type="button" data-testid="editor-play-button">Play</button>
+          <button type="button" data-testid="editor-stop-button">Stop</button>
         </p>
       </form>
 
@@ -69,6 +71,7 @@ import "../styles/global.css";
         type Composition,
         createEmptyComposition,
         pitchRowsForScale,
+        renderComposition,
         STEPS_PER_BAR,
         STEPS_PER_BEAT,
       } from "../lib/composition.ts";
@@ -83,17 +86,30 @@ import "../styles/global.css";
         stepForBlockColumn,
         STEPS_PER_BLOCK,
       } from "../lib/editorGrid.ts";
+      import { BEAT_SECONDS, playEvents, stop } from "../lib/audio.ts";
 
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
       const sourceSelect = document.querySelector<HTMLSelectElement>('[data-testid="editor-source-select"]')!;
       const clearButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-clear-button"]')!;
+      const playButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-play-button"]')!;
+      const stopButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-stop-button"]')!;
       const blockContainers = Array.from(
         { length: BLOCKS },
         (_, i) => document.querySelector<HTMLDivElement>(`[data-testid="composition-grid-block-${i}"]`)!,
       );
 
       let composition: Composition = createEmptyComposition(sourceSelect.value);
+
+      // Every mutation of `composition` routes through here so playback is
+      // always stopped first -- editing while a performance is running would
+      // otherwise let the played audio drift out of sync with what's now
+      // displayed on the grid, the same "no autoplay/no stale sound" logic
+      // index.astro applies on its own select-change handlers.
+      function setComposition(next: Composition): void {
+        stop();
+        composition = next;
+      }
 
       // Roving-tabindex focus position per block -- independent of Composition,
       // since it's UI state, not composition data. Keyed by block index.
@@ -187,7 +203,7 @@ import "../styles/global.css";
           event.preventDefault();
           const occupant = noteAt(composition, scaleStep, startStep);
           if (occupant) {
-            composition = removeNoteAt(composition, scaleStep, startStep);
+            setComposition(removeNoteAt(composition, scaleStep, startStep));
             renderAll();
             return; // gesture consumed -- no drag begins on top of a removal
           }
@@ -225,7 +241,7 @@ import "../styles/global.css";
 
         const finishDrag = (event: PointerEvent): void => {
           if (!drag || event.pointerId !== drag.pointerId) return;
-          composition = commitDrag(composition, drag.scaleStep, drag.anchorStep, drag.currentStep);
+          setComposition(commitDrag(composition, drag.scaleStep, drag.anchorStep, drag.currentStep));
           drag = null;
           renderAll();
         };
@@ -239,7 +255,7 @@ import "../styles/global.css";
               if (event.shiftKey) {
                 const occupant = noteAt(composition, scaleStep, startStep);
                 if (occupant) {
-                  composition = resizeNote(composition, scaleStep, occupant.startStep, 1);
+                  setComposition(resizeNote(composition, scaleStep, occupant.startStep, 1));
                   renderAll();
                   focusCell(blockIndex, rowIndex, col);
                 }
@@ -252,7 +268,7 @@ import "../styles/global.css";
               if (event.shiftKey) {
                 const occupant = noteAt(composition, scaleStep, startStep);
                 if (occupant) {
-                  composition = resizeNote(composition, scaleStep, occupant.startStep, -1);
+                  setComposition(resizeNote(composition, scaleStep, occupant.startStep, -1));
                   renderAll();
                   focusCell(blockIndex, rowIndex, col);
                 }
@@ -277,7 +293,7 @@ import "../styles/global.css";
             case "Backspace":
               event.preventDefault();
               if (noteAt(composition, scaleStep, startStep)) {
-                composition = removeNoteAt(composition, scaleStep, startStep);
+                setComposition(removeNoteAt(composition, scaleStep, startStep));
                 renderAll();
                 focusCell(blockIndex, rowIndex, col);
               }
@@ -300,9 +316,11 @@ import "../styles/global.css";
 
       function toggleCell(blockIndex: number, scaleStep: number, startStep: number, rowIndex: number, col: number): void {
         const occupant = noteAt(composition, scaleStep, startStep);
-        composition = occupant
-          ? removeNoteAt(composition, scaleStep, startStep)
-          : commitDrag(composition, scaleStep, startStep, startStep);
+        setComposition(
+          occupant
+            ? removeNoteAt(composition, scaleStep, startStep)
+            : commitDrag(composition, scaleStep, startStep, startStep),
+        );
         renderAll();
         focusCell(blockIndex, rowIndex, col);
       }
@@ -325,15 +343,23 @@ import "../styles/global.css";
       }
 
       sourceSelect.addEventListener("change", () => {
-        composition = createEmptyComposition(sourceSelect.value);
+        setComposition(createEmptyComposition(sourceSelect.value));
         for (const key of Object.keys(focused)) delete focused[Number(key)];
         renderAll();
       });
 
       clearButton.addEventListener("click", () => {
-        composition = createEmptyComposition(composition.sourceScale);
+        setComposition(createEmptyComposition(composition.sourceScale));
         renderAll();
       });
+
+      // No target-style selector exists yet (deferred to a later stage), so
+      // Play renders the composition natively -- target scale === source
+      // scale, the identity transform renderComposition already supports.
+      playButton.addEventListener("click", () => {
+        playEvents(renderComposition(composition, composition.sourceScale, BEAT_SECONDS));
+      });
+      stopButton.addEventListener("click", stop);
 
       renderAll();
     </script>
