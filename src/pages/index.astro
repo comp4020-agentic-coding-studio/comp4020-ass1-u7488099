@@ -114,6 +114,19 @@ import "../styles/global.css";
         </p>
       </section>
 
+      <section aria-label="Waveform">
+        <h2>Waveform</h2>
+        <p id="waveform-description">
+          A live view of the audio signal while it plays; calm and flat when nothing is sounding.
+        </p>
+        <canvas
+          data-testid="editor-waveform"
+          role="img"
+          aria-label="Live audio waveform"
+          aria-describedby="waveform-description"
+        ></canvas>
+      </section>
+
       <section aria-label="Keyboard">
         <h2>Keyboard</h2>
         <div class="piano-scroll">
@@ -146,9 +159,10 @@ import "../styles/global.css";
         stepForBlockColumn,
         STEPS_PER_BLOCK,
       } from "../lib/editorGrid.ts";
-      import { BEAT_SECONDS, playerEvents, playEvents, stop } from "../lib/audio.ts";
+      import { BEAT_SECONDS, getAnalyser, playerEvents, playEvents, stop } from "../lib/audio.ts";
       import { JOY_TO_THE_WORLD, MO_LI_HUA, type Melody, TWINKLE_TWINKLE } from "../lib/melodies.ts";
       import { keyboardKeys, withVoiceEnded, withVoiceStarted, type VoiceCounts } from "../lib/keyboard.ts";
+      import { idlePoints, waveformPoints } from "../lib/waveform.ts";
 
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
@@ -162,6 +176,8 @@ import "../styles/global.css";
       const moliHuaButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-moli-hua"]')!;
       const transformedOutput = document.querySelector<HTMLOutputElement>('[data-testid="editor-transformed-notes"]')!;
       const keyboardEl = document.querySelector<HTMLDivElement>('[data-testid="editor-keyboard"]')!;
+      const waveformCanvas = document.querySelector<HTMLCanvasElement>('[data-testid="editor-waveform"]')!;
+      const waveformCtx = waveformCanvas.getContext("2d")!;
       const blockContainers = Array.from(
         { length: BLOCKS },
         (_, i) => document.querySelector<HTMLDivElement>(`[data-testid="composition-grid-block-${i}"]`)!,
@@ -553,6 +569,94 @@ import "../styles/global.css";
         keyboardEl.querySelector(`[data-pitch="${pitchName}"]`)?.classList.toggle("active", active);
       }
 
+      // Oscilloscope waveform: driven by the real Web Audio signal via
+      // AnalyserNode.getByteTimeDomainData(), polled every animation frame --
+      // not by noteStart/noteEnd events, which mark boundaries but say
+      // nothing about the signal in between. Only lifecycle (when to
+      // start/stop/reset) reuses the same playerEvents "stop" this page's
+      // keyboard already relies on.
+      const prefersReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+      let rafId: number | null = null;
+      let intervalId: ReturnType<typeof setInterval> | null = null;
+      let animGeneration = 0;
+
+      function resizeWaveformCanvas(): void {
+        const rect = waveformCanvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        waveformCanvas.width = Math.max(1, Math.round(rect.width * ratio));
+        waveformCanvas.height = Math.max(1, Math.round(rect.height * ratio));
+      }
+
+      function paintWaveform(points: Array<[number, number]>): void {
+        const { width, height } = waveformCanvas;
+        waveformCtx.clearRect(0, 0, width, height);
+        waveformCtx.strokeStyle = "#0b5fff";
+        waveformCtx.lineWidth = 2;
+        waveformCtx.beginPath();
+        points.forEach(([x, y], i) => (i === 0 ? waveformCtx.moveTo(x, y) : waveformCtx.lineTo(x, y)));
+        waveformCtx.stroke();
+      }
+
+      function drawIdleWaveform(): void {
+        paintWaveform(idlePoints(waveformCanvas.width, waveformCanvas.height));
+      }
+
+      function drawLiveWaveformFrame(analyser: AnalyserNode, data: Uint8Array<ArrayBuffer>): void {
+        analyser.getByteTimeDomainData(data);
+        paintWaveform(waveformPoints(data, waveformCanvas.width, waveformCanvas.height));
+      }
+
+      // Only ever called right after playEvents() -- never before the first
+      // Play click -- so no analyser/animation loop exists until the visitor
+      // presses Play, per the no-autoplay rule this whole page follows.
+      function startVisualizer(): void {
+        const analyser = getAnalyser();
+        if (!analyser) return;
+        animGeneration++;
+        const gen = animGeneration;
+        const data = new Uint8Array(analyser.fftSize);
+
+        if (prefersReducedMotion.matches) {
+          // Real signal, throttled to 2/sec rather than continuous 60fps --
+          // still responds to what's playing, without a distracting
+          // continuous animation.
+          intervalId = setInterval(() => {
+            if (gen !== animGeneration) return;
+            drawLiveWaveformFrame(analyser, data);
+          }, 500);
+        } else {
+          const frame = () => {
+            if (gen !== animGeneration) return;
+            drawLiveWaveformFrame(analyser, data);
+            rafId = requestAnimationFrame(frame);
+          };
+          rafId = requestAnimationFrame(frame);
+        }
+      }
+
+      // Covers every case that must reset the waveform: the Stop button,
+      // natural completion, and every setComposition/target-style-change
+      // call site -- all of them already dispatch playerEvents "stop" (see
+      // audio.ts), so this is the only place that needs to know the
+      // visualizer exists. Bumping animGeneration here, before a restart's
+      // own startVisualizer() runs, is what stops a Play click mid-performance
+      // from leaving a stale loop behind (see playEvents()'s doc comment).
+      function stopVisualizer(): void {
+        animGeneration++;
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = null;
+        if (intervalId !== null) clearInterval(intervalId);
+        intervalId = null;
+        drawIdleWaveform();
+      }
+
+      playerEvents.addEventListener("stop", stopVisualizer);
+
+      window.addEventListener("resize", () => {
+        resizeWaveformCanvas();
+        if (rafId === null && intervalId === null) drawIdleWaveform(); // mid-playback frames self-correct next tick
+      });
+
       // One subscription, once, covers every lifecycle case: Stop,
       // Play-while-playing, edits/Clear/preset-load/Source-Style-change (all
       // route through setComposition, which calls stop() first), Target
@@ -618,11 +722,14 @@ import "../styles/global.css";
 
       playButton.addEventListener("click", () => {
         playEvents(renderComposition(composition, targetSelect.value, BEAT_SECONDS));
+        startVisualizer();
       });
       stopButton.addEventListener("click", stop);
 
       renderKeyboard();
       renderAll();
+      resizeWaveformCanvas();
+      drawIdleWaveform();
     </script>
 
     <style>
@@ -662,6 +769,19 @@ import "../styles/global.css";
         font-size: 0.75rem;
         font-weight: bold;
         color: #444;
+      }
+
+      /* No overflow-x wrapper needed here (unlike .grid-scroll/.piano-scroll
+         above) -- a <canvas> has no fixed-width children to overflow, it
+         just respects width: 100% directly; its backing resolution is set
+         from this rendered size in the script below. */
+      [data-testid="editor-waveform"] {
+        display: block;
+        width: 100%;
+        height: 8rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fafafa;
       }
     </style>
 

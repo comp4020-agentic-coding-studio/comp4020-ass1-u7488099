@@ -93,6 +93,10 @@ describe("reference-counting driven by real playerEvents", () => {
       gain = new FakeParam();
       connect = vi.fn();
     }
+    class FakeAnalyser {
+      fftSize = 0;
+      connect = vi.fn();
+    }
     class FakeAudioContext {
       currentTime = 0;
       destination = {};
@@ -103,6 +107,9 @@ describe("reference-counting driven by real playerEvents", () => {
       }
       createGain() {
         return new FakeGain();
+      }
+      createAnalyser() {
+        return new FakeAnalyser();
       }
     }
     oscillators = [];

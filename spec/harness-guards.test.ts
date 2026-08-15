@@ -59,3 +59,20 @@ describe("semantic controls", () => {
     }
   });
 });
+
+describe("waveform accessibility", () => {
+  it("is a real <canvas> with an accessible name, once it exists", () => {
+    const distPath = resolve("dist/index.html");
+    if (!existsSync(distPath)) return; // covered by the "built the page" check above
+
+    const doc = new JSDOM(readFileSync(distPath, "utf8")).window.document;
+    const canvas = doc.querySelector('[data-testid="editor-waveform"]');
+    if (!canvas) return; // this stage may not have shipped yet
+
+    expect(canvas.tagName, '[data-testid="editor-waveform"] must be a real <canvas>').toBe("CANVAS");
+    expect(
+      canvas.getAttribute("aria-label") || canvas.getAttribute("aria-describedby"),
+      "the waveform canvas needs an accessible name/description for non-visual users",
+    ).toBeTruthy();
+  });
+});

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { BEAT_SECONDS, play, playerEvents, playEvents, stop } from "./audio.ts";
+import { BEAT_SECONDS, getAnalyser, play, playerEvents, playEvents, stop } from "./audio.ts";
 import { RENDERED_REST } from "./melodies.ts";
 
 // A fake rather than a real AudioContext -- jsdom/node don't implement Web
@@ -35,20 +35,38 @@ class FakeGain {
   connect = vi.fn();
 }
 
+class FakeAnalyser {
+  fftSize = 0;
+  connect = vi.fn();
+}
+
 let oscillators: FakeOscillator[];
+let gains: FakeGain[];
+let analysersCreated: FakeAnalyser[];
+let destination: object;
 
 beforeAll(() => {
   oscillators = [];
+  gains = [];
+  analysersCreated = [];
+  destination = {};
   class FakeAudioContext {
     currentTime = 0;
-    destination = {};
+    destination = destination;
     createOscillator(): FakeOscillator {
       const oscillator = new FakeOscillator();
       oscillators.push(oscillator);
       return oscillator;
     }
     createGain(): FakeGain {
-      return new FakeGain();
+      const gain = new FakeGain();
+      gains.push(gain);
+      return gain;
+    }
+    createAnalyser(): FakeAnalyser {
+      const analyser = new FakeAnalyser();
+      analysersCreated.push(analyser);
+      return analyser;
     }
   }
   vi.stubGlobal("AudioContext", FakeAudioContext);
@@ -56,6 +74,50 @@ beforeAll(() => {
 
 afterAll(() => {
   vi.unstubAllGlobals();
+});
+
+// audio.ts's `analyser` module state is created once, lazily, on the very
+// first playEvents() call and never reset by stop() -- unlike
+// activeVoices/pendingTimers, which are cleared per-performance. So the
+// "not yet created" case can only be observed here, before any other
+// describe block below has called play()/playEvents().
+describe("shared analyser (must run before any play()/playEvents() call above touches module state)", () => {
+  it("is null until the first playEvents() call", () => {
+    expect(getAnalyser()).toBeNull();
+  });
+
+  it("is created on first play(), connected once to destination, and every voice's gain routes through it", () => {
+    play(["C4"], [1]);
+
+    const analyser = getAnalyser();
+    expect(analyser).not.toBeNull();
+    expect(analysersCreated).toHaveLength(1);
+    expect(analyser!.connect).toHaveBeenCalledTimes(1);
+    expect(analyser!.connect).toHaveBeenCalledWith(destination);
+    expect(gains.at(-1)!.connect).toHaveBeenCalledTimes(1);
+    expect(gains.at(-1)!.connect).toHaveBeenCalledWith(analyser);
+  });
+
+  it("reuses the same analyser instance across later performances, without reconnecting it", () => {
+    const before = getAnalyser();
+
+    play(["D4", "E4"], [1, 1]); // a second, later performance
+
+    expect(getAnalyser()).toBe(before);
+    expect(analysersCreated).toHaveLength(1); // still only ever created once
+    expect(before!.connect).toHaveBeenCalledTimes(1); // still only ever connected once
+    // the new performance's voices still route through the one shared analyser
+    for (const gain of gains.slice(-2)) {
+      expect(gain.connect).toHaveBeenCalledTimes(1);
+      expect(gain.connect).toHaveBeenCalledWith(before);
+    }
+  });
+
+  it("stop() leaves the analyser instance untouched", () => {
+    const before = getAnalyser();
+    stop();
+    expect(getAnalyser()).toBe(before);
+  });
 });
 
 describe("play/stop", () => {

@@ -55,7 +55,20 @@ export interface PlaybackEvent {
 // sounding notes, not rests.
 export const playerEvents = new EventTarget();
 
+// null until the first playEvents() call, then the same shared node for
+// every performance after -- callers (e.g. a waveform visualizer) never
+// create or own an AnalyserNode themselves.
+export function getAnalyser(): AnalyserNode | null {
+  return analyser;
+}
+
 let audioContext: AudioContext | null = null;
+// Shared by every voice so a single Web Audio tap sees the whole mix --
+// polyphony, presets, and transformed target styles all feed this one node.
+// Created lazily on first playEvents() (never before user playback) and
+// never recreated or disconnected afterward, so a caller can hold a stale
+// reference across multiple performances -- see getAnalyser().
+let analyser: AnalyserNode | null = null;
 let activeVoices: Voice[] = [];
 let pendingTimers: ReturnType<typeof setTimeout>[] = [];
 let generation = 0;
@@ -85,11 +98,21 @@ function scheduleTimer(delaySeconds: number, gen: number, run: () => void): void
 // "more than one event with overlapping [startSeconds, startSeconds +
 // durationSeconds) ranges," nothing here special-cases it.
 export function playEvents(events: PlaybackEvent[]): void {
+  // Dispatches "stop" synchronously before anything below schedules a new
+  // voice or animation frame -- a visualizer listening for "stop" tears
+  // itself down here, then this same call starts a fresh one, so a Play
+  // click mid-performance can never leave a stale animation loop running.
   stop(); // starting Play mid-performance restarts rather than layering
   generation++;
   const gen = generation;
   audioContext ??= new AudioContext();
   const context = audioContext;
+  if (!analyser) {
+    analyser = context.createAnalyser();
+    analyser.fftSize = 2048; // time-domain buffer length; smooth line, cheap per-frame cost
+    analyser.connect(context.destination);
+  }
+  const analyserNode = analyser;
   const origin = context.currentTime;
   isPlaying = true;
 
@@ -104,7 +127,7 @@ export function playEvents(events: PlaybackEvent[]): void {
     oscillator.type = "sine";
     oscillator.frequency.value = noteToFrequency(pitchName);
     oscillator.connect(gain);
-    gain.connect(context.destination);
+    gain.connect(analyserNode);
 
     const fade = Math.min(FADE_SECONDS, durationSeconds / 4);
     gain.gain.setValueAtTime(0, noteStart);
