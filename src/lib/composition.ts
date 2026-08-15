@@ -7,7 +7,7 @@
 
 import type { PlaybackEvent } from "./audio.ts";
 import { isRest, type Melody } from "./melodies.ts";
-import { SCALES } from "./scales.ts";
+import { noteToSemitone, parseNote, SCALES } from "./scales.ts";
 import { transformMelody } from "./transform.ts";
 
 export const BARS = 8;
@@ -90,6 +90,58 @@ export function transformCompositionNote(
     notes: [{ type: "note", scaleStep: note.scaleStep, duration: 1 }],
   };
   return transformMelody(singleton, targetScaleName)[0];
+}
+
+// Inverts substituteDegrees' degree -> semitone formula (tonicSemitone +
+// targetIntervals[degree] + 12*octaveShift), reading it backwards from a
+// pitch name transformCompositionNote already produced. Not new pitch-
+// mapping logic -- same SCALES table, same formula, just read the other
+// direction -- and always well-defined because that pitch name is a
+// target-scale member by construction (that's the whole point of
+// substituteDegrees/the pentatonic bridge).
+function scaleStepFromPitchName(pitchName: string, targetScaleName: string): number {
+  const targetIntervals = SCALES[targetScaleName];
+  if (!targetIntervals) throw new Error(`unknown scale: "${targetScaleName}"`);
+  const tonicSemitone = noteToSemitone(parseNote(CANONICAL_TONIC));
+  const relative = noteToSemitone(parseNote(pitchName)) - tonicSemitone;
+  const octaveShift = Math.floor(relative / 12);
+  const pitchClass = relative - 12 * octaveShift;
+  const degree = targetIntervals.indexOf(pitchClass);
+  if (degree === -1) {
+    throw new Error(
+      `pitch "${pitchName}" is not a member of "${targetScaleName}" -- transformCompositionNote invariant violated`,
+    );
+  }
+  return degree + targetIntervals.length * octaveShift;
+}
+
+// The editor grid's row index for a note once rendered under targetScaleName
+// -- lets the piano roll place a transformed note on the row that actually
+// matches its target pitch, whatever that scale's cardinality is.
+export function transformCompositionNoteToTargetStep(
+  note: CompositionNote,
+  sourceScale: string,
+  targetScaleName: string,
+): number {
+  return scaleStepFromPitchName(transformCompositionNote(note, sourceScale, targetScaleName), targetScaleName);
+}
+
+// A synthetic, display-only Composition: same startStep/lengthSteps as the
+// source, each note's scaleStep replaced by its target-scale-space row. This
+// exists purely so the editor grid's existing render helpers (noteAt,
+// pitchLabel, both in editorGrid.ts) can be reused unchanged for a read-only
+// "transformed" row-group -- never assign this to the canonical, editable
+// Composition a page holds.
+export function transformCompositionToTarget(composition: Composition, targetScaleName: string): Composition {
+  return {
+    sourceScale: targetScaleName,
+    notes: composition.notes.map((note) => ({
+      type: "note",
+      scaleStep: transformCompositionNoteToTargetStep(note, composition.sourceScale, targetScaleName),
+      startStep: note.startStep,
+      lengthSteps: note.lengthSteps,
+    })),
+  };
 }
 
 // Renders every note in a composition against targetScaleName, preserving

@@ -9,6 +9,8 @@ import {
   sequentialToComposition,
   STEPS_PER_BEAT,
   transformCompositionNote,
+  transformCompositionNoteToTargetStep,
+  transformCompositionToTarget,
 } from "./composition.ts";
 import { r, type Melody, type MelodyNote } from "./melodies.ts";
 import { transformMelody } from "./transform.ts";
@@ -101,6 +103,95 @@ describe("transformCompositionNote", () => {
     const first = transformCompositionNote(target, "Major", "Major Pentatonic");
     const second = transformCompositionNote(target, "Major", "Major Pentatonic");
     expect(first).toBe(second); // the independent path always lands on the same neighbour
+  });
+});
+
+describe("transformCompositionNoteToTargetStep / transformCompositionToTarget", () => {
+  it("7->7: a same-cardinality substitution keeps the note on its own scaleStep row, only its pitch differs", () => {
+    // Major mi (scaleStep 2, semitone 4) vs Natural Minor's scaleStep 2
+    // (semitone 3, a minor third) -- different pitch, but substituteDegrees
+    // preserves the degree index across equal cardinalities, so the target
+    // row is unchanged.
+    const target = note(2, 0, 4);
+    const pitch = transformCompositionNote(target, "Major", "Natural Minor");
+    const step = transformCompositionNoteToTargetStep(target, "Major", "Natural Minor");
+
+    expect(pitch).toBe("D#4");
+    expect(step).toBe(2);
+  });
+
+  it("5->5: a same-cardinality substitution keeps the note on its own scaleStep row", () => {
+    // Major Pentatonic re (scaleStep 1, semitone 2) vs In Sen's scaleStep 1
+    // (semitone 1) -- different pitch, same row.
+    const target = note(1, 0, 4);
+    const pitch = transformCompositionNote(target, "Major Pentatonic", "In Sen");
+    const step = transformCompositionNoteToTargetStep(target, "Major Pentatonic", "In Sen");
+
+    expect(pitch).toBe("C#4");
+    expect(step).toBe(1);
+  });
+
+  it("7->5 canonical bridge: a do/re/mi/sol/la degree maps to its identical pentatonic row", () => {
+    // Major sol (scaleStep 4, semitone 7) sits at Major Pentatonic degree 3.
+    const step = transformCompositionNoteToTargetStep(note(4, 0, 4), "Major", "Major Pentatonic");
+    expect(step).toBe(3);
+  });
+
+  it("7->5 canonical bridge: fa and ti bridge to their documented nearest-neighbour pentatonic row", () => {
+    // Matches pentatonicBridge.test.ts's single-note fa/ti expectations:
+    // fa (scaleStep 3) -> the mi slot (pentatonic scaleStep 2), same octave;
+    // ti (scaleStep 6) -> the do slot one octave up (pentatonic scaleStep 5).
+    expect(transformCompositionNoteToTargetStep(note(3, 0, 4), "Major", "Major Pentatonic")).toBe(2);
+    expect(transformCompositionNoteToTargetStep(note(6, 0, 4), "Major", "Major Pentatonic")).toBe(5);
+  });
+
+  it("5->7 canonical bridge: pure relabel, matching embedPentatonicIntoMajor's degree table", () => {
+    // Major Pentatonic la (scaleStep 3, semitone 9) embeds into Major's
+    // sol (scaleStep 4, semitone 9 too -- Major degree 4).
+    const step = transformCompositionNoteToTargetStep(note(3, 0, 4), "Major Pentatonic", "Major");
+    expect(step).toBe(4);
+  });
+
+  it("preserves startStep/lengthSteps exactly across a 7->5 bridge -- transformation only ever moves pitch", () => {
+    const composition: Composition = {
+      sourceScale: "Major",
+      notes: [note(4, 0, 4), note(3, 8, 2)],
+    };
+    const transformed = transformCompositionToTarget(composition, "Major Pentatonic");
+
+    expect(transformed.notes.map((n) => [n.startStep, n.lengthSteps])).toEqual(
+      composition.notes.map((n) => [n.startStep, n.lengthSteps]),
+    );
+  });
+
+  it("preserves polyphony: two notes sharing a startStep on different rows both survive with independent target rows", () => {
+    const composition: Composition = {
+      sourceScale: "Major",
+      notes: [note(4, 8, 4), note(3, 8, 4)], // sol and fa, simultaneous
+    };
+    const transformed = transformCompositionToTarget(composition, "Major Pentatonic");
+
+    expect(transformed.notes).toHaveLength(2);
+    expect(transformed.notes).toContainEqual(note(3, 8, 4)); // sol -> pentatonic degree 3
+    expect(transformed.notes).toContainEqual(note(2, 8, 4)); // fa -> pentatonic mi slot
+  });
+
+  it("is pure: the input composition and its notes array are left untouched", () => {
+    const original: Composition = { sourceScale: "Major", notes: [note(4, 0, 4), note(3, 8, 2)] };
+    const originalNotesCopy = original.notes.map((n) => ({ ...n }));
+
+    transformCompositionToTarget(original, "Hijaz");
+
+    expect(original.notes).toEqual(originalNotesCopy);
+  });
+
+  it("identity when target === source: every note's scaleStep is reproduced unchanged", () => {
+    const composition: Composition = {
+      sourceScale: "Major",
+      notes: [note(0, 0, 4), note(4, 8, 2), note(3, 12, 1)],
+    };
+    const transformed = transformCompositionToTarget(composition, composition.sourceScale);
+    expect(transformed.notes).toEqual(composition.notes);
   });
 });
 

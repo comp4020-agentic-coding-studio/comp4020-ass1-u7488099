@@ -43,9 +43,35 @@ import "../styles/global.css";
         <p class="hint">Changing style clears your composition.</p>
 
         <p>
+          <label>
+            Target style
+            <select data-testid="editor-target-select" name="target-scale">
+              <option value="Major">Major</option>
+              <option value="Natural Minor">Natural Minor</option>
+              <option value="Harmonic Minor">Harmonic Minor</option>
+              <option value="Melodic Minor (ascending)">Melodic Minor (ascending)</option>
+              <option value="Dorian">Dorian</option>
+              <option value="Phrygian">Phrygian</option>
+              <option value="Hijaz">Hijaz</option>
+              <option value="Major Pentatonic">Major Pentatonic (experimental)</option>
+              <option value="In Sen">In Sen (experimental)</option>
+            </select>
+          </label>
+        </p>
+        <p class="hint">
+          When target style differs from style, a second row group below shows where your notes move; Play plays
+          the transformed result.
+        </p>
+
+        <p>
           <button type="button" data-testid="editor-clear-button">Clear</button>
           <button type="button" data-testid="editor-play-button">Play</button>
           <button type="button" data-testid="editor-stop-button">Stop</button>
+        </p>
+
+        <p>
+          Transformed notes:
+          <output data-testid="editor-transformed-notes"></output>
         </p>
       </form>
 
@@ -74,6 +100,7 @@ import "../styles/global.css";
         renderComposition,
         STEPS_PER_BAR,
         STEPS_PER_BEAT,
+        transformCompositionToTarget,
       } from "../lib/composition.ts";
       import {
         BLOCKS,
@@ -91,9 +118,11 @@ import "../styles/global.css";
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
       const sourceSelect = document.querySelector<HTMLSelectElement>('[data-testid="editor-source-select"]')!;
+      const targetSelect = document.querySelector<HTMLSelectElement>('[data-testid="editor-target-select"]')!;
       const clearButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-clear-button"]')!;
       const playButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-play-button"]')!;
       const stopButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-stop-button"]')!;
+      const transformedOutput = document.querySelector<HTMLOutputElement>('[data-testid="editor-transformed-notes"]')!;
       const blockContainers = Array.from(
         { length: BLOCKS },
         (_, i) => document.querySelector<HTMLDivElement>(`[data-testid="composition-grid-block-${i}"]`)!,
@@ -131,17 +160,76 @@ import "../styles/global.css";
         return pitchRowsForScale(composition.sourceScale).slice().sort((a, b) => b - a);
       }
 
-      function renderAll(): void {
-        const rows = currentRows();
-        blockContainers.forEach((container, blockIndex) => renderBlock(container, blockIndex, rows));
+      // Whether a distinct target style is selected -- the single switch
+      // that decides both whether the second row-group renders at all and
+      // whether the source group's cells go subdued. Kept as one source of
+      // truth so the two can never disagree.
+      function showTransformed(): boolean {
+        return targetSelect.value !== composition.sourceScale;
       }
 
-      function renderBlock(container: HTMLDivElement, blockIndex: number, rows: number[]): void {
+      function renderAll(): void {
+        const rows = currentRows();
+        const transformed = showTransformed() ? transformCompositionToTarget(composition, targetSelect.value) : null;
+        const targetRows = transformed
+          ? pitchRowsForScale(targetSelect.value).slice().sort((a, b) => b - a)
+          : [];
+        blockContainers.forEach((container, blockIndex) =>
+          renderBlock(container, blockIndex, rows, transformed, targetRows),
+        );
+        renderTransformedNotesText();
+      }
+
+      function renderTransformedNotesText(): void {
+        const events = renderComposition(composition, targetSelect.value, BEAT_SECONDS);
+        transformedOutput.textContent = events.length
+          ? events.map((event) => event.pitchName).join(", ")
+          : "(nothing drawn yet)";
+      }
+
+      function renderBlock(
+        container: HTMLDivElement,
+        blockIndex: number,
+        rows: number[],
+        transformed: Composition | null,
+        targetRows: number[],
+      ): void {
         container.innerHTML = "";
-        container.setAttribute("role", "grid");
+
+        if (transformed) {
+          const caption = document.createElement("p");
+          caption.className = "row-group-caption";
+          caption.textContent = "As written";
+          container.appendChild(caption);
+        }
+
+        const sourceGrid = document.createElement("div");
+        renderSourceGrid(sourceGrid, blockIndex, rows, transformed !== null);
+        container.appendChild(sourceGrid);
+
+        if (transformed) {
+          const caption = document.createElement("p");
+          caption.className = "row-group-caption";
+          caption.textContent = `Transformed → ${targetSelect.value}`;
+          container.appendChild(caption);
+
+          const targetGrid = document.createElement("div");
+          targetGrid.setAttribute("aria-hidden", "true");
+          renderTargetGrid(targetGrid, blockIndex, targetRows, transformed);
+          container.appendChild(targetGrid);
+        }
+      }
+
+      function renderSourceGrid(
+        gridEl: HTMLDivElement,
+        blockIndex: number,
+        rows: number[],
+        subdued: boolean,
+      ): void {
+        gridEl.setAttribute("role", "grid");
         const barStart = blockIndex * BARS_PER_BLOCK + 1;
         const barEnd = barStart + BARS_PER_BLOCK - 1;
-        container.setAttribute("aria-label", `Bars ${barStart}–${barEnd}`);
+        gridEl.setAttribute("aria-label", `Bars ${barStart}–${barEnd}`);
 
         const focus = focused[blockIndex] ?? { row: 0, col: 0 };
 
@@ -174,6 +262,7 @@ import "../styles/global.css";
             if (occupant) cell.classList.add("occupied");
             if (isNoteStart) cell.classList.add("note-start");
             if (isNoteEnd) cell.classList.add("note-end");
+            if (subdued) cell.classList.add("subdued");
 
             const beatIndex = Math.floor(col / STEPS_PER_BEAT) + 1;
             const stepInBeat = (col % STEPS_PER_BEAT) + 1;
@@ -187,7 +276,48 @@ import "../styles/global.css";
 
             rowEl.appendChild(cell);
           }
-          container.appendChild(rowEl);
+          gridEl.appendChild(rowEl);
+        });
+      }
+
+      // Read-only mirror of renderSourceGrid for the transformed row-group:
+      // plain <div> cells (no handlers, no tabindex), so there is no code
+      // path by which interacting with this group could reach setComposition.
+      // Reuses the same occupied/note-start/note-end/bar-start/beat-start
+      // classes as the source grid, so a run of transformed notes fuses into
+      // one continuous block exactly the same way.
+      function renderTargetGrid(
+        gridEl: HTMLDivElement,
+        blockIndex: number,
+        rows: number[],
+        transformed: Composition,
+      ): void {
+        rows.forEach((scaleStep) => {
+          const rowEl = document.createElement("div");
+          rowEl.className = "grid-row";
+
+          const header = document.createElement("div");
+          header.className = "row-header";
+          header.textContent = pitchLabel(scaleStep, targetSelect.value);
+          rowEl.appendChild(header);
+
+          for (let col = 0; col < STEPS_PER_BLOCK; col++) {
+            const startStep = stepForBlockColumn(blockIndex, col);
+            const occupant = noteAt(transformed, scaleStep, startStep);
+            const isNoteStart = occupant?.startStep === startStep;
+            const isNoteEnd = occupant !== undefined && occupant.startStep + occupant.lengthSteps - 1 === startStep;
+
+            const cell = document.createElement("div");
+            cell.className = "grid-cell readonly";
+            if (col % STEPS_PER_BAR === 0) cell.classList.add("bar-start");
+            else if (col % STEPS_PER_BEAT === 0) cell.classList.add("beat-start");
+            if (occupant) cell.classList.add("occupied");
+            if (isNoteStart) cell.classList.add("note-start");
+            if (isNoteEnd) cell.classList.add("note-end");
+
+            rowEl.appendChild(cell);
+          }
+          gridEl.appendChild(rowEl);
         });
       }
 
@@ -344,6 +474,7 @@ import "../styles/global.css";
 
       sourceSelect.addEventListener("change", () => {
         setComposition(createEmptyComposition(sourceSelect.value));
+        targetSelect.value = sourceSelect.value; // both styles start in sync; only diverge when explicitly changed
         for (const key of Object.keys(focused)) delete focused[Number(key)];
         renderAll();
       });
@@ -353,11 +484,16 @@ import "../styles/global.css";
         renderAll();
       });
 
-      // No target-style selector exists yet (deferred to a later stage), so
-      // Play renders the composition natively -- target scale === source
-      // scale, the identity transform renderComposition already supports.
+      // Target style is pure render/UI state, never assigned onto
+      // `composition` -- changing it can only ever move where notes are
+      // drawn/played, never mutate or clear the source composition.
+      targetSelect.addEventListener("change", () => {
+        stop();
+        renderAll();
+      });
+
       playButton.addEventListener("click", () => {
-        playEvents(renderComposition(composition, composition.sourceScale, BEAT_SECONDS));
+        playEvents(renderComposition(composition, targetSelect.value, BEAT_SECONDS));
       });
       stopButton.addEventListener("click", stop);
 
@@ -385,6 +521,13 @@ import "../styles/global.css";
         overflow-x: auto;
         border: 1px solid #ccc;
         border-radius: 4px;
+      }
+
+      .row-group-caption {
+        margin: 0.5rem 0.25rem 0.25rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #444;
       }
     </style>
 
@@ -470,6 +613,20 @@ import "../styles/global.css";
       .grid-cell:focus-visible {
         outline: 2px solid #ff8c00;
         outline-offset: -2px;
+      }
+
+      /* Source-group notes, shown outlined-only once a differing target
+         style is selected -- the originally-entered notes stay visible but
+         visually subordinate to the transformed group's solid fill below. */
+      .grid-cell.subdued.occupied {
+        background: transparent;
+        border-top: 1px solid #0b5fff;
+        border-right-color: #0b5fff;
+        border-bottom-color: #0b5fff;
+      }
+
+      .grid-cell.readonly {
+        cursor: default;
       }
     </style>
   </body>
