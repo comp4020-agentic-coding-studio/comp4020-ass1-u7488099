@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
+import { SCALE_THEMES } from "../src/lib/themes.ts";
 
 // Guards for the CLAUDE.md project rules that a description alone won't
 // catch: no autoplay, no unexpected runtime dependencies, and — once the
@@ -74,5 +75,63 @@ describe("waveform accessibility", () => {
       canvas.getAttribute("aria-label") || canvas.getAttribute("aria-describedby"),
       "the waveform canvas needs an accessible name/description for non-visual users",
     ).toBeTruthy();
+  });
+});
+
+// Stage 6: Target style drives a centralized visual theme via a single
+// data-scale-theme attribute — this only checks the attribute exists with a
+// valid value at build time. Whether it actually *changes* when Target style
+// changes, whether Source style alone leaves it alone, and whether all 9
+// themes are visually distinguishable/readable are browser/human-judgment
+// checks (see the Stage 6 plan), not something a static build artifact can
+// prove.
+describe("scale theme scope", () => {
+  it("stamps .theme-scope with a data-scale-theme value from the theme registry", () => {
+    const distPath = resolve("dist/index.html");
+    if (!existsSync(distPath)) return; // covered by the "built the page" check above
+
+    const doc = new JSDOM(readFileSync(distPath, "utf8")).window.document;
+    const scope = doc.querySelector('[data-testid="theme-scope"]');
+    if (!scope) return; // this stage may not have shipped yet
+
+    const themeId = scope.getAttribute("data-scale-theme");
+    const validIds = Object.values(SCALE_THEMES).map((theme) => theme.id);
+    expect(themeId, ".theme-scope must have a non-empty data-scale-theme attribute").toBeTruthy();
+    expect(validIds, `"${themeId}" is not a known theme id (${validIds.join(", ")})`).toContain(themeId);
+  });
+});
+
+// Stage 6 redesign: the interactive region (Presets, Source/Target form,
+// Playback, Waveform, Keyboard, Composition editor) was pulled inside
+// .theme-scope so its *entire* background/chrome responds to Target style,
+// not just a handful of inner details -- only the neutral .intro (h1 + intro
+// paragraph) stays outside it. This guards the structural move itself: a
+// regression that pulls a control back out to sit alongside .intro would
+// pass every other check here (still real <select>/<button>) while quietly
+// undoing the redesign's whole premise.
+describe("interactive region lives inside the theme scope", () => {
+  it("keeps Presets, Source/Target selects, and Play/Stop inside .theme-scope", () => {
+    const distPath = resolve("dist/index.html");
+    if (!existsSync(distPath)) return; // covered by the "built the page" check above
+
+    const doc = new JSDOM(readFileSync(distPath, "utf8")).window.document;
+    const scope = doc.querySelector('[data-testid="theme-scope"]');
+    if (!scope) return; // this stage may not have shipped yet
+
+    const testids = [
+      "editor-preset-twinkle",
+      "editor-preset-joy",
+      "editor-preset-moli-hua",
+      "editor-clear-button",
+      "editor-source-select",
+      "editor-target-select",
+      "editor-play-button",
+      "editor-stop-button",
+    ];
+    for (const testid of testids) {
+      const el = doc.querySelector(`[data-testid="${testid}"]`);
+      if (!el) continue; // this stage may not have shipped yet
+      expect(scope.contains(el), `[data-testid="${testid}"] must be inside [data-testid="theme-scope"]`).toBe(true);
+    }
   });
 });

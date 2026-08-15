@@ -1,0 +1,339 @@
+/* Stage 6 (art-direction pass): culturally informed visual *worlds*, one per
+   Target style -- not just a palette swap. index.astro stamps a
+   `data-scale-theme` attribute (value = themes.ts's ThemeDefinition.id) onto
+   a single `.theme-scope.world` wrapper around everything EXCEPT the neutral
+   intro (the h1 + explanatory paragraph): Presets, the Source/Target style
+   form, Playback, Waveform, and Keyboard/Composition editor all live inside
+   it and change together when Target style changes. Everything below only
+   ever targets that one attribute, never scale names directly.
+
+   Justification for each grouping lives in the comment above its block; the
+   full cultural/historical reasoning is in the Stage 6 redesign plan.
+   Distinguishing information elsewhere in the page (note occupancy,
+   source/transformed, focus) never depends on these colors alone --
+   shape/border/fill already carries that, unchanged by this file. */
+
+.theme-scope {
+  transition:
+    background-color 200ms,
+    border-color 200ms,
+    color 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-scope,
+  .theme-scope * {
+    transition: none !important;
+  }
+}
+
+/* Major -- Western tonal/classical tradition (this explainer's artistic
+   lens; major scales are of course used far more broadly than one
+   tradition). Light, warm, orderly: cream/ivory ground, restrained gold
+   accent, a faint manuscript-staff hairline texture across the whole world
+   -- bright and stable without becoming childish or rainbow-colored. */
+[data-scale-theme="major"] {
+  --theme-bg: #fdf9f0;
+  --theme-surface: #fff;
+  --theme-surface-elevated: #fffefa;
+  --theme-text: #2a2410;
+  --theme-muted: #7d7250;
+  --theme-accent: #c9a227;
+  --theme-accent-secondary: #e8dcae;
+  --theme-border: #e8dcae;
+  --theme-grid-line: #e4dcc0;
+  --theme-shadow: rgb(180 150 80 / 18%);
+  --theme-note: #c9a227;
+  --theme-note-outline: #8a6d1a;
+  --theme-wave: #b8860b;
+  --theme-wave-glow: rgb(184 134 11 / 35%);
+  --theme-wave-width: 2;
+  --theme-key-active-white: #f3e6b8;
+  --theme-key-active-black: #c9a227;
+  --theme-world-texture: repeating-linear-gradient(
+    0deg,
+    rgb(201 162 39 / 5%) 0px,
+    rgb(201 162 39 / 5%) 1px,
+    transparent 1px,
+    transparent 24px
+  );
+  --theme-texture-strength: 0.6;
+}
+
+/* western-minor family: Natural, Harmonic, and Melodic Minor share the same
+   Western tonal framework as Major (a real relative/parallel-minor
+   relationship), rendered progressively darker/more dramatic. */
+
+/* Natural Minor -- Major's direct minor counterpart: same framework,
+   emotionally darker. Charcoal/navy ground, cool silver-blue accent, the
+   SAME staff-hairline texture as Major but dimmed on a dark ground --
+   literally "the same world, at night." */
+[data-scale-theme="natural-minor"] {
+  --theme-bg: #1c2230;
+  --theme-surface: #232a3a;
+  --theme-surface-elevated: #2a3244;
+  --theme-text: #e6e9f0;
+  --theme-muted: #9aa3b8;
+  --theme-accent: #8fa3c7;
+  --theme-accent-secondary: #4a5568;
+  --theme-border: #3a4256;
+  --theme-grid-line: #3a4256;
+  --theme-shadow: rgb(0 0 0 / 35%);
+  --theme-note: #8fa3c7;
+  --theme-note-outline: #5b7099;
+  --theme-wave: #b8c4dc;
+  --theme-wave-glow: rgb(143 163 199 / 40%);
+  --theme-wave-width: 2;
+  --theme-key-active-white: #cdd8ea;
+  --theme-key-active-black: #8fa3c7;
+  --theme-world-texture: repeating-linear-gradient(
+    0deg,
+    rgb(143 163 199 / 5%) 0px,
+    rgb(143 163 199 / 5%) 1px,
+    transparent 1px,
+    transparent 24px
+  );
+  --theme-texture-strength: 0.5;
+}
+
+/* Harmonic Minor -- the raised 7th (leading tone) is the textbook reason it
+   sounds more dramatic and cadentially stronger than Natural Minor; deeper
+   black, crimson + warm gold, a soft vignette darkening the world's edges
+   for higher contrast and a more ornate, sophisticated classical drama --
+   not "evil music" tropes. */
+[data-scale-theme="harmonic-minor"] {
+  --theme-bg: #14100f;
+  --theme-surface: #1f1613;
+  --theme-surface-elevated: #241a16;
+  --theme-text: #f2e6d8;
+  --theme-muted: #a8887a;
+  --theme-accent: #b3273e;
+  --theme-accent-secondary: #d4a24e;
+  --theme-border: #4a2f28;
+  --theme-grid-line: #3a2620;
+  --theme-shadow: rgb(179 39 62 / 35%);
+  --theme-note: #b3273e;
+  --theme-note-outline: #7a1626;
+  --theme-wave: #d4a24e;
+  --theme-wave-glow: rgb(179 39 62 / 50%);
+  --theme-wave-width: 2.5;
+  --theme-key-active-white: #e8b8be;
+  --theme-key-active-black: #b3273e;
+  --theme-world-texture:
+    radial-gradient(ellipse at 50% 30%, rgb(212 162 78 / 8%), transparent 60%),
+    radial-gradient(ellipse at center, transparent 40%, rgb(0 0 0 / 55%) 100%);
+  --theme-texture-strength: 0.8;
+}
+
+/* Melodic Minor (ascending) -- raised 6th AND 7th (this project's ascending-
+   only simplification, documented in melodies data) give it a smoother, less
+   angular quality than Harmonic Minor's single raised step. Blue-grey/muted
+   violet, soft-edged flowing gradient shapes and rounded panel corners --
+   fluid rather than dramatic, visibly distinct from its two minor siblings. */
+[data-scale-theme="melodic-minor"] {
+  --theme-bg: #1b1c2b;
+  --theme-surface: #232438;
+  --theme-surface-elevated: #282a42;
+  --theme-text: #e6e4f2;
+  --theme-muted: #9694b0;
+  --theme-accent: #8b7fc7;
+  --theme-accent-secondary: #5a5480;
+  --theme-border: #3d3d5c;
+  --theme-grid-line: #333350;
+  --theme-shadow: rgb(139 127 199 / 30%);
+  --theme-note: #8b7fc7;
+  --theme-note-outline: #5e5490;
+  --theme-wave: #a89bd9;
+  --theme-wave-glow: rgb(139 127 199 / 40%);
+  --theme-wave-width: 1.75;
+  --theme-key-active-white: #cec6ea;
+  --theme-key-active-black: #8b7fc7;
+  --theme-world-texture:
+    radial-gradient(circle at 30% 20%, rgb(139 127 199 / 12%), transparent 55%),
+    radial-gradient(circle at 75% 80%, rgb(90 84 128 / 12%), transparent 55%);
+  --theme-texture-strength: 0.55;
+}
+
+/* western-modal family: Dorian and Phrygian share the same Western modal
+   lineage (medieval church modes, later folk/jazz/rock revival) -- NOT
+   ancient Greek music despite the Greek-derived names; a Renaissance-era
+   naming mix-up means what's called "Dorian" today isn't what the ancient
+   Greeks called Dorian at all. Both share a modal-manuscript hairline
+   texture idea, oriented differently per mode's character. */
+
+/* Dorian -- natural 6th (vs. Natural Minor's flat 6th) is the real interval
+   that gives it a brighter, airier quality. Muted green/blue-green,
+   parchment-adjacent lightness, a horizontal hairline texture -- brighter
+   and calmer than Phrygian's angled version below. */
+[data-scale-theme="dorian"] {
+  --theme-bg: #24312a;
+  --theme-surface: #2c3a32;
+  --theme-surface-elevated: #33423a;
+  --theme-text: #e4ede6;
+  --theme-muted: #9db3a4;
+  --theme-accent: #6fae8c;
+  --theme-accent-secondary: #3f5548;
+  --theme-border: #3f5548;
+  --theme-grid-line: #3d4f43;
+  --theme-shadow: rgb(0 0 0 / 25%);
+  --theme-note: #6fae8c;
+  --theme-note-outline: #487a5e;
+  --theme-wave: #8ecfae;
+  --theme-wave-glow: rgb(111 174 140 / 35%);
+  --theme-wave-width: 2;
+  --theme-key-active-white: #bfe0cc;
+  --theme-key-active-black: #6fae8c;
+  --theme-world-texture: repeating-linear-gradient(
+    0deg,
+    rgb(111 174 140 / 6%) 0px,
+    rgb(111 174 140 / 6%) 1px,
+    transparent 1px,
+    transparent 22px
+  );
+  --theme-texture-strength: 0.5;
+}
+
+/* Phrygian -- the flattened 2nd is the real interval driving its compressed,
+   tense character. Later associated with Iberian/flamenco tradition (the
+   Andalusian cadence); flamenco's signature scale is usually Phrygian
+   *dominant*, a close cousin of this project's plain Phrygian, so the
+   connection is real but stated as "related to," not identical. Dark earth
+   + deep red, the SAME hairline idea as Dorian rotated diagonal/angular
+   instead of horizontal, with a tighter vignette -- more tension than
+   Dorian. No flags, dancers, bulls, or costumes. */
+[data-scale-theme="phrygian"] {
+  --theme-bg: #1f1512;
+  --theme-surface: #2a1c17;
+  --theme-surface-elevated: #301f19;
+  --theme-text: #f0e2da;
+  --theme-muted: #ab8a7c;
+  --theme-accent: #a63d2e;
+  --theme-accent-secondary: #5a4030;
+  --theme-border: #5a4030;
+  --theme-grid-line: #3d2b23;
+  --theme-shadow: rgb(0 0 0 / 40%);
+  --theme-note: #a63d2e;
+  --theme-note-outline: #6e2419;
+  --theme-wave: #c65a44;
+  --theme-wave-glow: rgb(166 61 46 / 45%);
+  --theme-wave-width: 2.25;
+  --theme-key-active-white: #e0b5ab;
+  --theme-key-active-black: #a63d2e;
+  --theme-world-texture:
+    repeating-linear-gradient(
+      35deg,
+      rgb(166 61 46 / 7%) 0px,
+      rgb(166 61 46 / 7%) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / 50%) 100%);
+  --theme-texture-strength: 0.65;
+}
+
+/* Hijaz -- the augmented 2nd between its 2nd and 3rd degrees (1.5 tones) is
+   its real, textbook-defining feature, historically tied to Arab/West Asian
+   maqam practice and religious/ceremonial use. Our implementation is a
+   simplified 12-tone-equal-tempered pitch collection related to Hijaz, not a
+   full maqam (real maqam practice involves melodic behaviour, characteristic
+   phrases, intonation and modulation beyond a scale array). Deep navy/black,
+   warm amber/gold + deep red, an interlocking diagonal-lattice texture
+   evoking Arab/West Asian geometric ornament through pure proportion and
+   pattern -- no flags, script, mosque silhouettes, or desert imagery. The
+   strongest, most distinct visual identity of the nine, on purpose. */
+[data-scale-theme="hijaz"] {
+  --theme-bg: #14141f;
+  --theme-surface: #1e1e30;
+  --theme-surface-elevated: #242440;
+  --theme-text: #f5e6c8;
+  --theme-muted: #b89f74;
+  --theme-accent: #d9a441;
+  --theme-accent-secondary: #8f2d2d;
+  --theme-border: #4a3f66;
+  --theme-grid-line: #3a3550;
+  --theme-shadow: rgb(217 164 65 / 30%);
+  --theme-note: #d9a441;
+  --theme-note-outline: #a67722;
+  --theme-wave: #e6b85c;
+  --theme-wave-glow: rgb(217 164 65 / 45%);
+  --theme-wave-width: 2;
+  --theme-key-active-white: #f0d9a8;
+  --theme-key-active-black: #d9a441;
+  --theme-world-texture:
+    repeating-linear-gradient(
+      45deg,
+      rgb(217 164 65 / 6%) 0px,
+      rgb(217 164 65 / 6%) 2px,
+      transparent 2px,
+      transparent 26px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgb(217 164 65 / 6%) 0px,
+      rgb(217 164 65 / 6%) 2px,
+      transparent 2px,
+      transparent 26px
+    );
+  --theme-texture-strength: 0.7;
+}
+
+/* Major Pentatonic -- deliberately Chinese-ink-informed for THIS explainer,
+   justified by Mo Li Hua (茉莉花) being an actual preset natively in this
+   scale, not by any claim that Major Pentatonic itself belongs to Chinese
+   music (pentatonic scales arose independently across many world
+   traditions). Rice-paper/xuan-paper ground, ink-wash black/grey, one
+   restrained vermilion accent, soft blurred "mist" shapes suggesting
+   negative-space landscape composition without depicting any literal scene
+   -- no dragons, lanterns, scattered characters, or red-and-gold decoration. */
+[data-scale-theme="major-pentatonic"] {
+  --theme-bg: #f2ede4;
+  --theme-surface: #faf7f0;
+  --theme-surface-elevated: #fffdf8;
+  --theme-text: #2b2b2b;
+  --theme-muted: #6b6b6b;
+  --theme-accent: #8a1f1f;
+  --theme-accent-secondary: #cfcabd;
+  --theme-border: #ddd6c7;
+  --theme-grid-line: #ddd6c7;
+  --theme-shadow: rgb(58 58 58 / 15%);
+  --theme-note: #3a3a3a;
+  --theme-note-outline: #8a1f1f;
+  --theme-wave: #3a3a3a;
+  --theme-wave-glow: rgb(58 58 58 / 25%);
+  --theme-wave-width: 2.5;
+  --theme-key-active-white: #e8c9c0;
+  --theme-key-active-black: #8a1f1f;
+  --theme-world-texture:
+    radial-gradient(ellipse 60% 40% at 20% 15%, rgb(58 58 58 / 6%), transparent 60%),
+    radial-gradient(ellipse 50% 35% at 80% 70%, rgb(58 58 58 / 5%), transparent 65%);
+  --theme-texture-strength: 0.5;
+}
+
+/* In Sen -- deliberately Japanese-ink-informed for THIS explainer, same
+   caveat as Major Pentatonic above. Sumi-e/washi-paper feel: charcoal ink on
+   off-white, one pale sakura highlight used sparingly rather than a
+   background flood, an asymmetric single mist shape (quieter/lighter than
+   Major Pentatonic's paired shapes) with more negative space -- minimal and
+   restrained where Major Pentatonic is bolder, related but distinct. No
+   anime styling, flags, or torii/samurai imagery. */
+[data-scale-theme="in-sen"] {
+  --theme-bg: #f4f1ec;
+  --theme-surface: #faf8f4;
+  --theme-surface-elevated: #fffefb;
+  --theme-text: #2c2a28;
+  --theme-muted: #77726b;
+  --theme-accent: #c98a99;
+  --theme-accent-secondary: #d8d3ca;
+  --theme-border: #ded7cb;
+  --theme-grid-line: #ded7cb;
+  --theme-shadow: rgb(74 70 66 / 12%);
+  --theme-note: #3a3733;
+  --theme-note-outline: #c98a99;
+  --theme-wave: #4a4642;
+  --theme-wave-glow: rgb(201 138 153 / 20%);
+  --theme-wave-width: 1.5;
+  --theme-key-active-white: #ecd9de;
+  --theme-key-active-black: #c98a99;
+  --theme-world-texture: radial-gradient(ellipse 55% 40% at 75% 20%, rgb(74 70 66 / 4.5%), transparent 65%);
+  --theme-texture-strength: 0.35;
+}

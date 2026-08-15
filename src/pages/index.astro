@@ -1,5 +1,10 @@
 ---
 import "../styles/global.css";
+import "../styles/scale-themes.css";
+import { BARS } from "../lib/composition.ts";
+import { BLOCKS } from "../lib/editorGrid.ts";
+
+const BARS_PER_BLOCK = BARS / BLOCKS;
 ---
 
 <!doctype html>
@@ -16,124 +21,148 @@ import "../styles/global.css";
       </nav>
     </header>
     <main>
-      <h1>One Melody, Many Worlds</h1>
-      <p>
-        Pick a scale. The melody stays the same — same notes, same rhythm,
-        same starting pitch — only the scale each note is drawn from
-        changes. A scale is one ingredient of a musical tradition, not the
-        whole thing: this isn't "this melody, but Chinese/Japanese/Arabic,"
-        it's the same tune reinterpreted through a different set of
-        intervals.
-      </p>
-
-      <section aria-label="Presets">
-        <h2>Presets</h2>
+      <div class="intro">
+        <h1>One Melody, Many Worlds</h1>
         <p>
-          <button type="button" data-testid="editor-preset-twinkle">Twinkle Twinkle Little Star</button>
-          <button type="button" data-testid="editor-preset-joy">Joy to the World</button>
-          <button type="button" data-testid="editor-preset-moli-hua">Mo Li Hua / 茉莉花</button>
-          <button type="button" data-testid="editor-clear-button">Clear / New Composition</button>
+          Pick a scale. The melody stays the same — same notes, same rhythm,
+          same starting pitch — only the scale each note is drawn from
+          changes. A scale is one ingredient of a musical tradition, not the
+          whole thing: this isn't "this melody, but Chinese/Japanese/Arabic,"
+          it's the same tune reinterpreted through a different set of
+          intervals.
         </p>
-      </section>
+      </div>
 
-      <form>
-        <p>
-          <label>
-            Style
-            <select data-testid="editor-source-select" name="source-scale">
-              <option value="Major">Major</option>
-              <option value="Natural Minor">Natural Minor</option>
-              <option value="Harmonic Minor">Harmonic Minor</option>
-              <option value="Melodic Minor (ascending)">Melodic Minor (ascending)</option>
-              <option value="Dorian">Dorian</option>
-              <option value="Phrygian">Phrygian</option>
-              <option value="Hijaz">Hijaz</option>
-              <option value="Major Pentatonic">Major Pentatonic (experimental)</option>
-              <option value="In Sen">In Sen (experimental)</option>
-            </select>
-          </label>
-        </p>
-        <p class="hint">Changing style clears your composition.</p>
+      <div class="theme-scope world" data-scale-theme="major" data-testid="theme-scope">
+        <div class="world-inner">
+          <section class="panel" aria-label="Presets">
+            <h2>Presets</h2>
+            <div class="preset-tracks">
+              <button type="button" class="track-button" data-testid="editor-preset-twinkle">
+                Twinkle Twinkle Little Star
+              </button>
+              <button type="button" class="track-button" data-testid="editor-preset-joy">Joy to the World</button>
+              <button type="button" class="track-button" data-testid="editor-preset-moli-hua">
+                Mo Li Hua / 茉莉花
+              </button>
+              <button type="button" class="track-button track-button--clear" data-testid="editor-clear-button">
+                Clear / New Composition
+              </button>
+            </div>
+          </section>
 
-        <p>
-          <label>
-            Target style
-            <select data-testid="editor-target-select" name="target-scale">
-              <option value="Major">Major</option>
-              <option value="Natural Minor">Natural Minor</option>
-              <option value="Harmonic Minor">Harmonic Minor</option>
-              <option value="Melodic Minor (ascending)">Melodic Minor (ascending)</option>
-              <option value="Dorian">Dorian</option>
-              <option value="Phrygian">Phrygian</option>
-              <option value="Hijaz">Hijaz</option>
-              <option value="Major Pentatonic">Major Pentatonic (experimental)</option>
-              <option value="In Sen">In Sen (experimental)</option>
-            </select>
-          </label>
-        </p>
-        <p class="hint">
-          When target style differs from style, a second row group below shows where your notes move; Play plays
-          the transformed result.
-        </p>
-      </form>
+          <section class="panel" aria-label="Style controls">
+            <h2>Style</h2>
+            <form class="style-form">
+              <div class="style-field">
+                <label for="source-scale">Style</label>
+                <select id="source-scale" data-testid="editor-source-select" name="source-scale">
+                  <option value="Major">Major</option>
+                  <option value="Natural Minor">Natural Minor</option>
+                  <option value="Harmonic Minor">Harmonic Minor</option>
+                  <option value="Melodic Minor (ascending)">Melodic Minor (ascending)</option>
+                  <option value="Dorian">Dorian</option>
+                  <option value="Phrygian">Phrygian</option>
+                  <option value="Hijaz">Hijaz</option>
+                  <option value="Major Pentatonic">Major Pentatonic (experimental)</option>
+                  <option value="In Sen">In Sen (experimental)</option>
+                </select>
+              </div>
 
-      <section aria-label="Composition editor">
-        <h2>Composition editor</h2>
-        <p>
-          Click or drag across a row to place a note; click a note to remove
-          it. Arrow keys move focus, Enter/Space places or removes a note, and
-          Shift + Arrow resizes one.
-        </p>
+              <span class="style-connector" aria-hidden="true">→</span>
 
-        <p>
-          Transformed notes:
-          <output data-testid="editor-transformed-notes"></output>
-        </p>
+              <div class="style-field">
+                <label for="target-scale">Target style</label>
+                <select id="target-scale" data-testid="editor-target-select" name="target-scale">
+                  <option value="Major">Major</option>
+                  <option value="Natural Minor">Natural Minor</option>
+                  <option value="Harmonic Minor">Harmonic Minor</option>
+                  <option value="Melodic Minor (ascending)">Melodic Minor (ascending)</option>
+                  <option value="Dorian">Dorian</option>
+                  <option value="Phrygian">Phrygian</option>
+                  <option value="Hijaz">Hijaz</option>
+                  <option value="Major Pentatonic">Major Pentatonic (experimental)</option>
+                  <option value="In Sen">In Sen (experimental)</option>
+                </select>
+              </div>
+            </form>
+            <p class="hint">Changing style clears your composition.</p>
+            <p class="hint">
+              When target style differs from style, a second row group below shows where your notes move; Play
+              plays the transformed result.
+            </p>
+          </section>
 
-        <div class="blocks">
-          {
-            Array.from({ length: 4 }, (_, blockIndex) => (
-              <section class="editor-block">
-                <h3>
-                  Bars {blockIndex * 2 + 1}–{blockIndex * 2 + 2}
-                </h3>
-                <div class="grid-scroll">
-                  <div data-testid={`composition-grid-block-${blockIndex}`} />
-                </div>
-              </section>
-            ))
-          }
+          <section class="panel" aria-label="Playback">
+            <h2>Playback</h2>
+            <div class="transport">
+              <button type="button" class="transport-button transport-button--play" data-testid="editor-play-button"
+                >Play</button
+              >
+              <button type="button" class="transport-button transport-button--stop" data-testid="editor-stop-button"
+                >Stop</button
+              >
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Waveform">
+            <h2>Waveform</h2>
+            <p id="waveform-description">
+              A live view of the audio signal while it plays; calm and flat when nothing is sounding.
+            </p>
+            <div class="waveform-panel">
+              <canvas
+                data-testid="editor-waveform"
+                role="img"
+                aria-label="Live audio waveform"
+                aria-describedby="waveform-description"
+              ></canvas>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Keyboard">
+            <h2>Keyboard</h2>
+            <div class="piano-scroll">
+              <div
+                class="piano"
+                data-testid="editor-keyboard"
+                role="img"
+                aria-label="Piano keyboard showing currently sounding notes"
+              >
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Composition editor">
+            <h2>Composition editor</h2>
+            <p>
+              Click or drag across a row to place a note; click a note to remove
+              it. Arrow keys move focus, Enter/Space places or removes a note, and
+              Shift + Arrow resizes one.
+            </p>
+
+            <p>
+              Transformed notes:
+              <output data-testid="editor-transformed-notes"></output>
+            </p>
+
+            <div class="blocks">
+              {
+                Array.from({ length: BLOCKS }, (_, blockIndex) => (
+                  <section class="editor-block">
+                    <h3>
+                      Bars {blockIndex * BARS_PER_BLOCK + 1}–{blockIndex * BARS_PER_BLOCK + BARS_PER_BLOCK}
+                    </h3>
+                    <div class="grid-scroll">
+                      <div data-testid={`composition-grid-block-${blockIndex}`} />
+                    </div>
+                  </section>
+                ))
+              }
+            </div>
+          </section>
         </div>
-      </section>
-
-      <section aria-label="Playback">
-        <h2>Playback</h2>
-        <p>
-          <button type="button" data-testid="editor-play-button">Play</button>
-          <button type="button" data-testid="editor-stop-button">Stop</button>
-        </p>
-      </section>
-
-      <section aria-label="Waveform">
-        <h2>Waveform</h2>
-        <p id="waveform-description">
-          A live view of the audio signal while it plays; calm and flat when nothing is sounding.
-        </p>
-        <canvas
-          data-testid="editor-waveform"
-          role="img"
-          aria-label="Live audio waveform"
-          aria-describedby="waveform-description"
-        ></canvas>
-      </section>
-
-      <section aria-label="Keyboard">
-        <h2>Keyboard</h2>
-        <div class="piano-scroll">
-          <div class="piano" data-testid="editor-keyboard" role="img" aria-label="Piano keyboard showing currently sounding notes">
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
 
     <script>
@@ -163,6 +192,7 @@ import "../styles/global.css";
       import { JOY_TO_THE_WORLD, MO_LI_HUA, type Melody, TWINKLE_TWINKLE } from "../lib/melodies.ts";
       import { keyboardKeys, withVoiceEnded, withVoiceStarted, type VoiceCounts } from "../lib/keyboard.ts";
       import { idlePoints, waveformPoints } from "../lib/waveform.ts";
+      import { themeForScale } from "../lib/themes.ts";
 
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
@@ -178,6 +208,7 @@ import "../styles/global.css";
       const keyboardEl = document.querySelector<HTMLDivElement>('[data-testid="editor-keyboard"]')!;
       const waveformCanvas = document.querySelector<HTMLCanvasElement>('[data-testid="editor-waveform"]')!;
       const waveformCtx = waveformCanvas.getContext("2d")!;
+      const themeScope = document.querySelector<HTMLDivElement>('[data-testid="theme-scope"]')!;
       const blockContainers = Array.from(
         { length: BLOCKS },
         (_, i) => document.querySelector<HTMLDivElement>(`[data-testid="composition-grid-block-${i}"]`)!,
@@ -232,6 +263,7 @@ import "../styles/global.css";
           renderBlock(container, blockIndex, rows, transformed, targetRows),
         );
         renderTransformedNotesText();
+        applyTheme(); // every call site that can change targetSelect.value already calls renderAll()
       }
 
       function renderTransformedNotesText(): void {
@@ -587,11 +619,38 @@ import "../styles/global.css";
         waveformCanvas.height = Math.max(1, Math.round(rect.height * ratio));
       }
 
+      // Refreshed once per theme change (see applyTheme below), never per
+      // animation frame -- a getComputedStyle call on every one of 60
+      // frames/sec would be wasted cost when the theme only actually changes
+      // on a Target style select event.
+      let waveStyle = { color: "#0b5fff", glow: "transparent", width: 2 };
+
+      function refreshWaveStyle(): void {
+        const cs = getComputedStyle(themeScope);
+        waveStyle = {
+          color: cs.getPropertyValue("--theme-wave").trim() || waveStyle.color,
+          glow: cs.getPropertyValue("--theme-wave-glow").trim() || "transparent",
+          width: parseFloat(cs.getPropertyValue("--theme-wave-width")) || 2,
+        };
+      }
+
+      // The single place Target style resolves to a visual theme -- every
+      // other function only ever reads themeScope.dataset.scaleTheme or the
+      // CSS custom properties it drives, never branches on a scale name
+      // itself (see themes.ts).
+      function applyTheme(): void {
+        themeScope.dataset.scaleTheme = themeForScale(targetSelect.value).id;
+        refreshWaveStyle();
+      }
+
       function paintWaveform(points: Array<[number, number]>): void {
         const { width, height } = waveformCanvas;
         waveformCtx.clearRect(0, 0, width, height);
-        waveformCtx.strokeStyle = "#0b5fff";
-        waveformCtx.lineWidth = 2;
+        waveformCtx.strokeStyle = waveStyle.color;
+        waveformCtx.lineWidth = waveStyle.width;
+        waveformCtx.lineCap = "round";
+        waveformCtx.shadowColor = waveStyle.glow;
+        waveformCtx.shadowBlur = waveStyle.glow === "transparent" ? 0 : 6;
         waveformCtx.beginPath();
         points.forEach(([x, y], i) => (i === 0 ? waveformCtx.moveTo(x, y) : waveformCtx.lineTo(x, y)));
         waveformCtx.stroke();
@@ -733,55 +792,301 @@ import "../styles/global.css";
     </script>
 
     <style>
+      main {
+        max-width: none;
+        margin: 0;
+      }
+
+      .intro {
+        max-width: 40rem;
+        margin: 0 auto 2rem;
+        box-sizing: border-box;
+      }
+
       .hint {
-        color: #555;
+        color: var(--theme-muted, #555);
         font-size: 0.9rem;
       }
 
-      .blocks {
+      /* The entire interactive region lives inside .world -- its background,
+         texture, and every panel within it change with Target style. .intro
+         above stays a fixed neutral zone regardless of theme. isolation
+         creates a stacking context so ::before's texture layer (z-index: 0)
+         reliably sits behind .world-inner's content (z-index: 1) without
+         needing z-index values coordinated against anything outside .world. */
+      .world {
+        position: relative;
+        isolation: isolate;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-x: clip;
+        background-color: var(--theme-bg, #fff);
+        color: var(--theme-text, #1a1a1a);
+        border-radius: 20px;
+        padding: 2rem 1.5rem 2.5rem;
+        transition: background-color 200ms ease;
+      }
+
+      .world::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image: var(--theme-world-texture, none);
+        opacity: var(--theme-texture-strength, 0.5);
+      }
+
+      .world-inner {
+        position: relative;
+        z-index: 1;
+        max-width: 72rem;
+        margin: 0 auto;
         display: flex;
         flex-direction: column;
+        gap: 1.75rem;
+      }
+
+      .panel {
+        box-sizing: border-box;
+        background: var(--theme-surface, #fff);
+        border: 1px solid var(--theme-border, #ccc);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 18px var(--theme-shadow, rgba(0, 0, 0, 0.1));
+      }
+
+      .panel h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.05rem;
+        letter-spacing: 0.02em;
+      }
+
+      /* Presets, restyled as track cards rather than a flat button row --
+         still real <button type="button"> elements, only the CSS changed. */
+      .preset-tracks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .track-button {
+        box-sizing: border-box;
+        background: var(--theme-surface-elevated, #f5f5f5);
+        color: var(--theme-text, #1a1a1a);
+        border: 1px solid var(--theme-border, #ccc);
+        border-radius: 999px;
+        padding: 0.55rem 1.15rem;
+        font: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition:
+          border-color 150ms ease,
+          transform 100ms ease,
+          background-color 150ms ease;
+      }
+
+      .track-button:hover {
+        border-color: var(--theme-accent, #888);
+      }
+
+      .track-button:active {
+        transform: scale(0.97);
+      }
+
+      .track-button:focus-visible {
+        outline: 2px solid #ff8c00;
+        outline-offset: 2px;
+      }
+
+      .track-button--clear {
+        border-style: dashed;
+      }
+
+      /* Source/Target style controls, grouped in one panel with a
+         Source -> Target connector glyph -- still real <select> elements,
+         only appearance:none + a CSS chevron replace the browser default. */
+      .style-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
         gap: 1rem;
+        margin: 0 0 0.75rem;
       }
 
-      .editor-block h3 {
-        font-size: 1rem;
-        margin: 0 0 0.25rem;
+      .style-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        font-size: 0.9rem;
       }
 
-      .grid-scroll {
-        overflow-x: auto;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+      .style-field select {
+        box-sizing: border-box;
+        appearance: none;
+        background-color: var(--theme-surface-elevated, #fff);
+        color: var(--theme-text, #1a1a1a);
+        border: 1px solid var(--theme-border, #ccc);
+        border-radius: 8px;
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
+        font: inherit;
+        font-size: 0.95rem;
+        background-image:
+          linear-gradient(45deg, transparent 50%, currentcolor 50%),
+          linear-gradient(135deg, currentcolor 50%, transparent 50%);
+        background-position:
+          calc(100% - 14px) calc(50% - 3px),
+          calc(100% - 9px) calc(50% - 3px);
+        background-size: 5px 5px, 5px 5px;
+        background-repeat: no-repeat;
+      }
+
+      .style-field select:focus-visible {
+        outline: 2px solid #ff8c00;
+        outline-offset: 2px;
+      }
+
+      .style-connector {
+        align-self: center;
+        padding-bottom: 0.5rem;
+        font-size: 1.3rem;
+        color: var(--theme-accent, #888);
+      }
+
+      .transport {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .transport-button {
+        box-sizing: border-box;
+        border-radius: 999px;
+        padding: 0.65rem 1.85rem;
+        font: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 2px solid var(--theme-accent, #888);
+        transition:
+          background-color 150ms ease,
+          transform 100ms ease;
+      }
+
+      .transport-button--play {
+        background: var(--theme-accent, #0b5fff);
+        color: var(--theme-surface, #fff);
+      }
+
+      .transport-button--stop {
+        background: transparent;
+        color: var(--theme-text, #1a1a1a);
+      }
+
+      .transport-button:active {
+        transform: scale(0.96);
+      }
+
+      .transport-button:focus-visible {
+        outline: 2px solid #ff8c00;
+        outline-offset: 2px;
+      }
+
+      .waveform-panel {
+        position: relative;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid var(--theme-border, #ccc);
+        background: var(--theme-surface, #fafafa);
+        box-shadow: 0 6px 22px var(--theme-shadow, rgba(0, 0, 0, 0.15));
+        padding: 0.5rem;
+      }
+
+      .waveform-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: var(--theme-world-texture, none);
+        opacity: calc(var(--theme-texture-strength, 0.5) * 0.7);
+      }
+
+      /* No overflow-x wrapper needed for the canvas itself -- it has no
+         fixed-width children to overflow, it just respects width: 100%
+         directly; its backing resolution is set from this rendered size in
+         the script above. Transparent background (rather than the previous
+         opaque theme-bg fill) is what lets .waveform-panel's ::before show
+         through the whole bitmap -- paintWaveform's clearRect never leaves
+         an opaque pixel behind. */
+      [data-testid="editor-waveform"] {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 16rem;
+        background: transparent;
       }
 
       /* Fixed-width keys (see is:global below) mean the keyboard can be
          wider than a narrow viewport -- scrolls internally, same pattern as
          .grid-scroll, rather than causing page-level horizontal scroll. */
       .piano-scroll {
+        box-sizing: border-box;
         overflow-x: auto;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+        border: 1px solid var(--theme-border, #ccc);
+        border-radius: 12px;
+        background: var(--theme-surface, #fff);
+        box-shadow: 0 4px 16px var(--theme-shadow, rgba(0, 0, 0, 0.12));
+        padding: 0.75rem;
+      }
+
+      .blocks {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .editor-block h3 {
+        font-size: 0.85rem;
+        margin: 0 0 0.15rem;
+        color: var(--theme-muted, #666);
+        font-weight: 600;
+      }
+
+      .grid-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--theme-border, #ccc);
+        border-radius: 6px;
+        background: var(--theme-surface-elevated, #fff);
       }
 
       .row-group-caption {
-        margin: 0.5rem 0.25rem 0.25rem;
-        font-size: 0.75rem;
+        margin: 0.35rem 0.25rem 0.15rem;
+        font-size: 0.7rem;
         font-weight: bold;
-        color: #444;
+        color: var(--theme-muted, #444);
       }
 
-      /* No overflow-x wrapper needed here (unlike .grid-scroll/.piano-scroll
-         above) -- a <canvas> has no fixed-width children to overflow, it
-         just respects width: 100% directly; its backing resolution is set
-         from this rendered size in the script below. */
-      [data-testid="editor-waveform"] {
-        display: block;
-        width: 100%;
-        height: 8rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        background: #fafafa;
+      @media (max-width: 37.5em) {
+        .world {
+          padding: 1.25rem 1rem 1.75rem;
+          border-radius: 14px;
+        }
+
+        .world-inner {
+          gap: 1.25rem;
+        }
+
+        .world::before {
+          opacity: calc(var(--theme-texture-strength, 0.5) * 0.5);
+        }
+
+        [data-testid="editor-waveform"] {
+          height: 10rem;
+        }
+
+        .panel {
+          padding: 1rem;
+        }
       }
     </style>
 
@@ -799,28 +1104,47 @@ import "../styles/global.css";
         display: flex;
       }
 
+      /* 64 columns per block (4 bars x 16 sixteenth-notes -- BARS_PER_BLOCK,
+         not the 32 an earlier pass assumed) means the header must be a hard
+         fixed width: box-sizing: border-box alone doesn't stop a flex item
+         from growing past its flex-basis to fit text content, so width +
+         min-width pin it and overflow/white-space clip a too-long pitch
+         label rather than pushing the whole row wider. */
       .row-header {
         position: sticky;
         left: 0;
-        flex: 0 0 3rem;
+        flex: 0 0 2rem;
+        width: 2rem;
+        min-width: 2rem;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f5f5f5;
-        border-right: 1px solid #999;
-        font-size: 0.75rem;
-        padding: 0 0.25rem;
+        background: var(--theme-surface-elevated, #f5f5f5);
+        color: var(--theme-text, #1a1a1a);
+        border-right: 1px solid var(--theme-border, #999);
+        font-size: 0.65rem;
+        padding: 0 0.15rem;
       }
 
+      /* box-sizing must be explicit: renderSourceGrid's cells are real
+         <button>s (border-box by default in the UA stylesheet), but
+         renderTargetGrid's read-only mirror cells are plain <div>s
+         (content-box by default) -- without this, the two row-groups'
+         cells are actually different widths once borders are counted, and
+         the target group's rows silently overflow .grid-scroll. */
       .grid-cell {
-        flex: 0 0 1.75rem;
-        height: 1.75rem;
-        min-width: 1.75rem;
-        min-height: 1.75rem;
+        box-sizing: border-box;
+        flex: 0 0 1rem;
+        height: 1rem;
+        min-width: 1rem;
+        min-height: 1rem;
         border: none;
-        border-right: 1px solid #e0e0e0;
-        border-bottom: 1px solid #e0e0e0;
-        background: #fff;
+        border-right: 1px solid var(--theme-grid-line, #e0e0e0);
+        border-bottom: 1px solid var(--theme-grid-line, #e0e0e0);
+        background: var(--theme-surface-elevated, #fff);
         padding: 0;
         cursor: pointer;
       }
@@ -830,11 +1154,11 @@ import "../styles/global.css";
          startStep -- not its right edge, which would draw the line one
          sixteenth late and make the whole timeline look shifted by one step. */
       .grid-cell.beat-start {
-        border-left: 1px solid #b0b0b0;
+        border-left: 1px solid var(--theme-border, #b0b0b0);
       }
 
       .grid-cell.bar-start {
-        border-left: 2px solid #555;
+        border-left: 2px solid var(--theme-text, #555);
       }
 
       /* A run of occupied cells belonging to one note must read as a single
@@ -843,25 +1167,25 @@ import "../styles/global.css";
          adjacent occupied cells fuse into one block; only the note's outer
          edges (note-start/note-end) get a border and rounded corner. */
       .grid-cell.occupied {
-        background: #0b5fff;
-        border-right-color: #0b5fff;
-        border-bottom-color: #0b5fff;
+        background: var(--theme-note, #0b5fff);
+        border-right-color: var(--theme-note, #0b5fff);
+        border-bottom-color: var(--theme-note, #0b5fff);
       }
 
       .grid-cell.note-start {
-        border-left: 2px solid #063a9e;
+        border-left: 2px solid var(--theme-note-outline, #063a9e);
         border-top-left-radius: 4px;
         border-bottom-left-radius: 4px;
       }
 
       .grid-cell.note-end {
-        border-right: 2px solid #063a9e;
+        border-right: 2px solid var(--theme-note-outline, #063a9e);
         border-top-right-radius: 4px;
         border-bottom-right-radius: 4px;
       }
 
       .grid-cell.drag-preview {
-        background: #9dc0ff;
+        background: var(--theme-accent-secondary, #9dc0ff);
       }
 
       .grid-cell:focus-visible {
@@ -874,13 +1198,20 @@ import "../styles/global.css";
          visually subordinate to the transformed group's solid fill below. */
       .grid-cell.subdued.occupied {
         background: transparent;
-        border-top: 1px solid #0b5fff;
-        border-right-color: #0b5fff;
-        border-bottom-color: #0b5fff;
+        border-top: 1px solid var(--theme-accent-secondary, #0b5fff);
+        border-right-color: var(--theme-accent-secondary, #0b5fff);
+        border-bottom-color: var(--theme-accent-secondary, #0b5fff);
       }
 
       .grid-cell.readonly {
         cursor: default;
+      }
+
+      @media (max-width: 37.5em) {
+        .grid-cell {
+          height: 1.5rem;
+          min-height: 1.5rem;
+        }
       }
 
       /* Fixed-width white keys (rather than flex-growing to fill the
@@ -929,11 +1260,13 @@ import "../styles/global.css";
       }
 
       .piano-key.white.active {
-        background: #9dc0ff;
+        background: var(--theme-key-active-white, #9dc0ff);
+        box-shadow: 0 0 10px var(--theme-accent, transparent);
       }
 
       .piano-key.black.active {
-        background: #0b5fff;
+        background: var(--theme-key-active-black, #0b5fff);
+        box-shadow: 0 0 10px var(--theme-accent, transparent);
       }
     </style>
   </body>
