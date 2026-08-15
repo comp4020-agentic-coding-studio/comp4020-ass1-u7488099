@@ -84,6 +84,14 @@ import "../styles/global.css";
         </p>
       </form>
 
+      <section aria-label="Keyboard">
+        <h2>Keyboard</h2>
+        <div class="piano-scroll">
+          <div class="piano" data-testid="editor-keyboard" role="img" aria-label="Piano keyboard showing currently sounding notes">
+          </div>
+        </div>
+      </section>
+
       <div class="blocks">
         {
           Array.from({ length: 4 }, (_, blockIndex) => (
@@ -123,8 +131,9 @@ import "../styles/global.css";
         stepForBlockColumn,
         STEPS_PER_BLOCK,
       } from "../lib/editorGrid.ts";
-      import { BEAT_SECONDS, playEvents, stop } from "../lib/audio.ts";
+      import { BEAT_SECONDS, playerEvents, playEvents, stop } from "../lib/audio.ts";
       import { JOY_TO_THE_WORLD, MO_LI_HUA, type Melody, TWINKLE_TWINKLE } from "../lib/melodies.ts";
+      import { keyboardKeys, withVoiceEnded, withVoiceStarted, type VoiceCounts } from "../lib/keyboard.ts";
 
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
@@ -137,6 +146,7 @@ import "../styles/global.css";
       const joyButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-joy"]')!;
       const moliHuaButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-moli-hua"]')!;
       const transformedOutput = document.querySelector<HTMLOutputElement>('[data-testid="editor-transformed-notes"]')!;
+      const keyboardEl = document.querySelector<HTMLDivElement>('[data-testid="editor-keyboard"]')!;
       const blockContainers = Array.from(
         { length: BLOCKS },
         (_, i) => document.querySelector<HTMLDivElement>(`[data-testid="composition-grid-block-${i}"]`)!,
@@ -486,6 +496,71 @@ import "../styles/global.css";
         container.querySelector<HTMLButtonElement>(`.grid-cell[data-row="${row}"][data-col="${col}"]`)?.focus();
       }
 
+      // Static: built once from keyboardKeys() and never re-rendered, since
+      // the key layout never changes -- only .active classes toggle at
+      // runtime. Each black key nests inside the white key immediately
+      // before it, absolutely positioned by CSS on the boundary between the
+      // two -- simpler than computing container-relative pixel offsets.
+      function renderKeyboard(): void {
+        keyboardEl.innerHTML = "";
+        const keys = keyboardKeys();
+        for (let i = 0; i < keys.length; i++) {
+          const key = keys[i];
+          if (key.isBlack) continue; // consumed as a child of the preceding white key below
+
+          const whiteEl = document.createElement("div");
+          whiteEl.className = "piano-key white";
+          whiteEl.dataset.pitch = key.pitchName;
+          if (key.pitchName.startsWith("C")) {
+            const label = document.createElement("span");
+            label.className = "piano-key-label";
+            label.textContent = key.pitchName;
+            whiteEl.appendChild(label);
+          }
+
+          const next = keys[i + 1];
+          if (next?.isBlack) {
+            const blackEl = document.createElement("div");
+            blackEl.className = "piano-key black";
+            blackEl.dataset.pitch = next.pitchName;
+            whiteEl.appendChild(blackEl);
+          }
+
+          keyboardEl.appendChild(whiteEl);
+        }
+      }
+
+      // Reference-counted so a pitch sounding from more than one overlapping
+      // event (polyphony, or two voices sharing a pitch) stays lit until
+      // every voice has ended, not just the first -- see keyboard.ts.
+      let voiceCounts: VoiceCounts = {};
+
+      function setKeyActive(pitchName: string, active: boolean): void {
+        keyboardEl.querySelector(`[data-pitch="${pitchName}"]`)?.classList.toggle("active", active);
+      }
+
+      // One subscription, once, covers every lifecycle case: Stop,
+      // Play-while-playing, edits/Clear/preset-load/Source-Style-change (all
+      // route through setComposition, which calls stop() first), Target
+      // Style change (calls stop() directly), and natural completion --
+      // every one of those already dispatches through audio.ts's
+      // playerEvents, so no other call site needs to know the keyboard
+      // exists at all.
+      playerEvents.addEventListener("noteStart", (event) => {
+        const { pitchName } = (event as CustomEvent).detail;
+        voiceCounts = withVoiceStarted(voiceCounts, pitchName);
+        setKeyActive(pitchName, true);
+      });
+      playerEvents.addEventListener("noteEnd", (event) => {
+        const { pitchName } = (event as CustomEvent).detail;
+        voiceCounts = withVoiceEnded(voiceCounts, pitchName);
+        setKeyActive(pitchName, pitchName in voiceCounts);
+      });
+      playerEvents.addEventListener("stop", () => {
+        for (const pitchName of Object.keys(voiceCounts)) setKeyActive(pitchName, false);
+        voiceCounts = {};
+      });
+
       sourceSelect.addEventListener("change", () => {
         setComposition(createEmptyComposition(sourceSelect.value));
         targetSelect.value = sourceSelect.value; // both styles start in sync; only diverge when explicitly changed
@@ -532,6 +607,7 @@ import "../styles/global.css";
       });
       stopButton.addEventListener("click", stop);
 
+      renderKeyboard();
       renderAll();
     </script>
 
@@ -553,6 +629,15 @@ import "../styles/global.css";
       }
 
       .grid-scroll {
+        overflow-x: auto;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      /* Fixed-width keys (see is:global below) mean the keyboard can be
+         wider than a narrow viewport -- scrolls internally, same pattern as
+         .grid-scroll, rather than causing page-level horizontal scroll. */
+      .piano-scroll {
         overflow-x: auto;
         border: 1px solid #ccc;
         border-radius: 4px;
@@ -662,6 +747,59 @@ import "../styles/global.css";
 
       .grid-cell.readonly {
         cursor: default;
+      }
+
+      /* Fixed-width white keys (rather than flex-growing to fill the
+         container) so keys stay a usable, recognizable size at any
+         viewport -- .piano-scroll above handles the resulting overflow on
+         narrow screens. Each black key is a child of the white key
+         immediately before it, positioned on the boundary between the two;
+         a simplification of a real piano's slightly-offset black keys, but
+         correctly grouped and unambiguous. */
+      .piano {
+        display: flex;
+        height: 5rem;
+      }
+
+      .piano-key.white {
+        position: relative;
+        flex: 0 0 1.8rem;
+        height: 100%;
+        background: #fff;
+        border: 1px solid #999;
+        margin-left: -1px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 0.25rem;
+        box-sizing: border-box;
+      }
+
+      .piano-key-label {
+        font-size: 0.65rem;
+        color: #777;
+        pointer-events: none;
+      }
+
+      .piano-key.black {
+        position: absolute;
+        top: 0;
+        left: 100%;
+        transform: translateX(-50%);
+        width: 65%;
+        height: 60%;
+        background: #222;
+        border: 1px solid #000;
+        border-radius: 0 0 3px 3px;
+        z-index: 2;
+      }
+
+      .piano-key.white.active {
+        background: #9dc0ff;
+      }
+
+      .piano-key.black.active {
+        background: #0b5fff;
       }
     </style>
   </body>
