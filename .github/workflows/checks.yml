@@ -42,7 +42,16 @@ jobs:
         if: ${{ !github.event.repository.is_template }}
         run: pnpm check:evidence
       - name: Check internal links
-        run: pnpm dlx linkinator ./dist --silent
+        # This site sets an Astro `base` of /comp4020-ass1-u7488099, so every
+        # internal link on the page is prefixed with the repo name, but the
+        # built dist/ has no such subfolder on disk -- GitHub Pages supplies
+        # that prefix itself when serving a project page. Strip it back off
+        # before crawling so linkinator checks against dist/'s real layout
+        # instead of false-positiving on every asset link.
+        run: >-
+          pnpm dlx linkinator ./dist --silent
+          --url-rewrite-search "/comp4020-ass1-u7488099/"
+          --url-rewrite-replace "/"
       - name: Scan for committed secrets
         # Pinned, both halves: the SHA fixes the action's script, and `version`
         # fixes the scanner image, which otherwise floats on :latest. These two
