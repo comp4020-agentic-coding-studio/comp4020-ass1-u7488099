@@ -101,8 +101,8 @@ describe("scale theme scope", () => {
   });
 });
 
-// Stage 6 redesign: the interactive region (Presets, Source/Target form,
-// Playback, Waveform, Keyboard, Composition editor) was pulled inside
+// Stage 6 redesign: the interactive region (Presets, Source/Target form
+// with Play/Stop, Waveform, Keyboard, Composition editor) was pulled inside
 // .theme-scope so its *entire* background/chrome responds to Target style,
 // not just a handful of inner details -- only the neutral .intro (h1 + intro
 // paragraph) stays outside it. This guards the structural move itself: a
@@ -120,8 +120,14 @@ describe("interactive region lives inside the theme scope", () => {
 
     const testids = [
       "editor-preset-twinkle",
-      "editor-preset-joy",
+      "editor-preset-ode-to-joy",
+      "editor-preset-mary-lamb",
       "editor-preset-moli-hua",
+      "editor-preset-scarborough-fair",
+      "editor-preset-hava-nagila",
+      "editor-preset-god-rest-ye-merry",
+      "editor-preset-tallis",
+      "editor-preset-bwv999",
       "editor-clear-button",
       "editor-source-select",
       "editor-target-select",

@@ -3,8 +3,8 @@
    `data-scale-theme` attribute (value = themes.ts's ThemeDefinition.id) onto
    a single `.theme-scope.world` wrapper around everything EXCEPT the neutral
    intro (the h1 + explanatory paragraph): Presets, the Source/Target style
-   form, Playback, Waveform, and Keyboard/Composition editor all live inside
-   it and change together when Target style changes. Everything below only
+   form (Play/Stop included), and Waveform/Keyboard/Composition editor all
+   live inside it and change together when Target style changes. Everything below only
    ever targets that one attribute, never scale names directly.
 
    Justification for each grouping lives in the comment above its block; the

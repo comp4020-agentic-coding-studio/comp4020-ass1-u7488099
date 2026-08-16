@@ -25,28 +25,70 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
             transforms.
           </p>
         </div>
-        <svg class="hero-art" viewBox="0 0 640 240" role="img" aria-hidden="true" focusable="false">
-          <path class="hero-art-trunk" d="M20,120 C90,120 130,120 200,120" />
-          <path class="hero-art-branch" d="M200,120 C280,120 340,70 480,40" />
-          <path class="hero-art-branch" d="M200,120 C280,120 340,110 480,105" />
-          <path class="hero-art-branch" d="M200,120 C280,120 340,135 480,170" />
-          <path class="hero-art-branch" d="M200,120 C280,120 340,160 480,215" />
-          <circle class="hero-art-note" cx="20" cy="120" r="7" />
-          <circle class="hero-art-note" cx="480" cy="40" r="6" />
-          <circle class="hero-art-note" cx="480" cy="105" r="6" />
-          <circle class="hero-art-note" cx="480" cy="170" r="6" />
-          <circle class="hero-art-note" cx="480" cy="215" r="6" />
+        <svg class="hero-art" viewBox="0 0 720 330" role="img" aria-hidden="true" focusable="false">
+          <!-- One phrase (a beamed group on a five-line staff, deliberately
+               generic -- not a transcription of any specific melody) enters
+               from the left, then fans into five paths that arrive as
+               separate staff fragments at different pitches, three carrying
+               an accidental. Purely symbolic of "one idea, many pitch
+               vocabularies" -- nothing here claims to notate a real piece. -->
+          <g class="hero-art-source-staff">
+            <line x1="40" y1="110" x2="240" y2="110" />
+            <line x1="40" y1="124" x2="240" y2="124" />
+            <line x1="40" y1="138" x2="240" y2="138" />
+            <line x1="40" y1="152" x2="240" y2="152" />
+            <line x1="40" y1="166" x2="240" y2="166" />
+          </g>
+          <g class="hero-art-notes">
+            <line class="hero-art-beam" x1="86" y1="88" x2="191" y2="88" />
+            <line x1="86" y1="151" x2="86" y2="88" />
+            <line x1="121" y1="137" x2="121" y2="88" />
+            <line x1="156" y1="123" x2="156" y2="88" />
+            <line x1="191" y1="109" x2="191" y2="88" />
+            <ellipse class="hero-art-notehead" cx="80" cy="152" rx="7" ry="5" transform="rotate(-18 80 152)" />
+            <ellipse class="hero-art-notehead" cx="115" cy="138" rx="7" ry="5" transform="rotate(-18 115 138)" />
+            <ellipse class="hero-art-notehead" cx="150" cy="124" rx="7" ry="5" transform="rotate(-18 150 124)" />
+            <ellipse class="hero-art-notehead" cx="185" cy="110" rx="7" ry="5" transform="rotate(-18 185 110)" />
+          </g>
+          <g class="hero-art-branches">
+            <path d="M245,138 C340,138 420,40 620,40" />
+            <path d="M245,138 C340,138 420,105 620,105" />
+            <path d="M245,138 C340,138 420,175 620,175" />
+            <path d="M245,138 C340,138 420,245 620,245" />
+            <path d="M245,138 C340,138 420,300 620,300" />
+          </g>
+          <g class="hero-art-destinations">
+            <g class="hero-art-fragment">
+              <line x1="610" y1="28" x2="700" y2="28" /><line x1="610" y1="40" x2="700" y2="40" /><line x1="610" y1="52" x2="700" y2="52" />
+              <text x="608" y="46" text-anchor="end">♯</text>
+              <ellipse class="hero-art-notehead" cx="660" cy="40" rx="7" ry="5" transform="rotate(-18 660 40)" />
+            </g>
+            <g class="hero-art-fragment">
+              <line x1="610" y1="93" x2="700" y2="93" /><line x1="610" y1="105" x2="700" y2="105" /><line x1="610" y1="117" x2="700" y2="117" />
+              <ellipse class="hero-art-notehead" cx="660" cy="105" rx="7" ry="5" transform="rotate(-18 660 105)" />
+            </g>
+            <g class="hero-art-fragment">
+              <line x1="610" y1="163" x2="700" y2="163" /><line x1="610" y1="175" x2="700" y2="175" /><line x1="610" y1="187" x2="700" y2="187" />
+              <text x="608" y="181" text-anchor="end">♭</text>
+              <ellipse class="hero-art-notehead" cx="660" cy="175" rx="7" ry="5" transform="rotate(-18 660 175)" />
+            </g>
+            <g class="hero-art-fragment">
+              <line x1="610" y1="233" x2="700" y2="233" /><line x1="610" y1="245" x2="700" y2="245" /><line x1="610" y1="257" x2="700" y2="257" />
+              <ellipse class="hero-art-notehead" cx="660" cy="245" rx="7" ry="5" transform="rotate(-18 660 245)" />
+            </g>
+            <g class="hero-art-fragment">
+              <line x1="610" y1="288" x2="700" y2="288" /><line x1="610" y1="300" x2="700" y2="300" /><line x1="610" y1="312" x2="700" y2="312" />
+              <text x="608" y="306" text-anchor="end">♮</text>
+              <ellipse class="hero-art-notehead" cx="660" cy="300" rx="7" ry="5" transform="rotate(-18 660 300)" />
+            </g>
+          </g>
         </svg>
         <div class="hero-scroll-cue" aria-hidden="true"><span></span></div>
       </section>
 
       <nav class="section-nav" aria-label="Sections">
-        <a href="#presets">Presets</a>
         <a href="#style-controls">Style</a>
-        <a href="#playback">Playback</a>
-        <a href="#waveform">Waveform</a>
-        <a href="#keyboard">Keyboard</a>
-        <a href="#composition-editor">Composition editor</a>
+        <a href="#composition-editor">Editor</a>
       </nav>
 
       <div class="theme-scope world" data-scale-theme="major" data-testid="theme-scope">
@@ -54,15 +96,44 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
           <section class="panel" id="presets" aria-label="Presets">
             <h2>Presets</h2>
             <div class="preset-tracks">
-              <button type="button" class="track-button" data-testid="editor-preset-twinkle">
-                Twinkle Twinkle Little Star
+              <button type="button" class="preset-card" data-testid="editor-preset-twinkle">
+                <span class="preset-card-name">Twinkle Twinkle Little Star</span>
+                <span class="preset-card-style">Major</span>
               </button>
-              <button type="button" class="track-button" data-testid="editor-preset-joy">Joy to the World</button>
-              <button type="button" class="track-button" data-testid="editor-preset-moli-hua">
-                Mo Li Hua / 茉莉花
+              <button type="button" class="preset-card" data-testid="editor-preset-ode-to-joy">
+                <span class="preset-card-name">Ode to Joy</span>
+                <span class="preset-card-style">Major</span>
               </button>
-              <button type="button" class="track-button track-button--clear" data-testid="editor-clear-button">
-                Clear / New Composition
+              <button type="button" class="preset-card" data-testid="editor-preset-mary-lamb">
+                <span class="preset-card-name">Mary Had a Little Lamb</span>
+                <span class="preset-card-style">Major</span>
+              </button>
+              <button type="button" class="preset-card" data-testid="editor-preset-moli-hua">
+                <span class="preset-card-name">Mo Li Hua / 茉莉花</span>
+                <span class="preset-card-style">Major Pentatonic</span>
+              </button>
+              <button type="button" class="preset-card" data-testid="editor-preset-scarborough-fair">
+                <span class="preset-card-name">Scarborough Fair</span>
+                <span class="preset-card-style">Dorian</span>
+              </button>
+              <button type="button" class="preset-card" data-testid="editor-preset-hava-nagila">
+                <span class="preset-card-name">Hava Nagila</span>
+                <span class="preset-card-style">Hijaz</span>
+              </button>
+              <button type="button" class="preset-card" data-testid="editor-preset-god-rest-ye-merry">
+                <span class="preset-card-name">God Rest Ye Merry, Gentlemen</span>
+                <span class="preset-card-style">Natural Minor</span>
+              </button>
+              <button type="button" class="preset-card" data-testid="editor-preset-tallis">
+                <span class="preset-card-name">Why Fum'th in Fight (Tallis)</span>
+                <span class="preset-card-style">Phrygian</span>
+              </button>
+              <button type="button" class="preset-card" data-testid="editor-preset-bwv999">
+                <span class="preset-card-name">Prelude in D minor, BWV 999</span>
+                <span class="preset-card-style">Harmonic Minor</span>
+              </button>
+              <button type="button" class="preset-card preset-card--clear" data-testid="editor-clear-button">
+                <span class="preset-card-name">Clear / New Composition</span>
               </button>
             </div>
           </section>
@@ -101,6 +172,15 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
                   <option value="In Sen">In Sen (experimental)</option>
                 </select>
               </div>
+
+              <div class="transport">
+                <button type="button" class="transport-button transport-button--play" data-testid="editor-play-button"
+                  >Play</button
+                >
+                <button type="button" class="transport-button transport-button--stop" data-testid="editor-stop-button"
+                  >Stop</button
+                >
+              </div>
             </form>
             <p class="hint">Changing style clears your composition.</p>
             <p class="hint">
@@ -114,32 +194,16 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
             </p>
           </section>
 
-          <section class="panel" id="playback" aria-label="Playback">
-            <h2>Playback</h2>
-            <div class="transport">
-              <button type="button" class="transport-button transport-button--play" data-testid="editor-play-button"
-                >Play</button
-              >
-              <button type="button" class="transport-button transport-button--stop" data-testid="editor-stop-button"
-                >Stop</button
-              >
-            </div>
-          </section>
-
           <section class="panel performance-panel" id="performance" aria-label="Performance">
             <h2>Performance</h2>
             <div class="performance-layout">
               <div class="performance-column performance-waveform" id="waveform">
                 <h3>Waveform</h3>
-                <p id="waveform-description">
-                  A live view of the audio signal while it plays; calm and flat when nothing is sounding.
-                </p>
                 <div class="waveform-panel">
                   <canvas
                     data-testid="editor-waveform"
                     role="img"
                     aria-label="Live audio waveform"
-                    aria-describedby="waveform-description"
                   ></canvas>
                 </div>
               </div>
@@ -216,7 +280,18 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         STEPS_PER_BLOCK,
       } from "../lib/editorGrid.ts";
       import { BEAT_SECONDS, getAnalyser, getAudioContext, playerEvents, playEvents, stop } from "../lib/audio.ts";
-      import { JOY_TO_THE_WORLD, MO_LI_HUA, type Melody, TWINKLE_TWINKLE } from "../lib/melodies.ts";
+      import {
+        BWV_999,
+        GOD_REST_YE_MERRY_GENTLEMEN,
+        HAVA_NAGILA,
+        MARY_HAD_A_LITTLE_LAMB,
+        type Melody,
+        MO_LI_HUA,
+        ODE_TO_JOY,
+        SCARBOROUGH_FAIR,
+        TWINKLE_TWINKLE,
+        WHY_FUMTH_IN_FIGHT,
+      } from "../lib/melodies.ts";
       import { keyboardKeys, withVoiceEnded, withVoiceStarted, type VoiceCounts } from "../lib/keyboard.ts";
       import { idlePoints, waveformPoints } from "../lib/waveform.ts";
       import { themeForScale } from "../lib/themes.ts";
@@ -230,8 +305,18 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
       const playButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-play-button"]')!;
       const stopButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-stop-button"]')!;
       const twinkleButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-twinkle"]')!;
-      const joyButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-joy"]')!;
+      const odeToJoyButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-ode-to-joy"]')!;
+      const maryLambButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-mary-lamb"]')!;
       const moliHuaButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-moli-hua"]')!;
+      const scarboroughFairButton = document.querySelector<HTMLButtonElement>(
+        '[data-testid="editor-preset-scarborough-fair"]',
+      )!;
+      const havaNagilaButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-hava-nagila"]')!;
+      const godRestYeMerryButton = document.querySelector<HTMLButtonElement>(
+        '[data-testid="editor-preset-god-rest-ye-merry"]',
+      )!;
+      const tallisButton = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-tallis"]')!;
+      const bwv999Button = document.querySelector<HTMLButtonElement>('[data-testid="editor-preset-bwv999"]')!;
       const transformedOutput = document.querySelector<HTMLOutputElement>('[data-testid="editor-transformed-notes"]')!;
       const pieceCaption = document.querySelector<HTMLParagraphElement>('[data-testid="piece-caption"]')!;
       const keyboardEl = document.querySelector<HTMLDivElement>('[data-testid="editor-keyboard"]')!;
@@ -816,7 +901,8 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
       }
 
       twinkleButton.addEventListener("click", () => loadPreset(TWINKLE_TWINKLE));
-      joyButton.addEventListener("click", () => loadPreset(JOY_TO_THE_WORLD));
+      odeToJoyButton.addEventListener("click", () => loadPreset(ODE_TO_JOY));
+      maryLambButton.addEventListener("click", () => loadPreset(MARY_HAD_A_LITTLE_LAMB));
       // Only this preset carries a piece identity: loadPreset (via
       // setComposition) already clears activePieceLabel, so it's re-set
       // here, after loading, and the caption re-rendered to match.
@@ -825,6 +911,11 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         activePieceLabel = "茉莉花";
         updatePieceCaption();
       });
+      scarboroughFairButton.addEventListener("click", () => loadPreset(SCARBOROUGH_FAIR));
+      havaNagilaButton.addEventListener("click", () => loadPreset(HAVA_NAGILA));
+      godRestYeMerryButton.addEventListener("click", () => loadPreset(GOD_REST_YE_MERRY_GENTLEMEN));
+      tallisButton.addEventListener("click", () => loadPreset(WHY_FUMTH_IN_FIGHT));
+      bwv999Button.addEventListener("click", () => loadPreset(BWV_999));
 
       // Target style is pure render/UI state, never assigned onto
       // `composition` -- changing it can only ever move where notes are
@@ -902,26 +993,46 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
 
       .hero-art {
         display: block;
-        width: min(100%, 30rem);
+        width: min(100%, 38rem);
         height: auto;
-        margin: 1.5rem auto 0.25rem;
+        margin: 1.75rem auto 0.5rem;
       }
 
-      .hero-art-trunk,
-      .hero-art-branch {
-        fill: none;
-        stroke: #94a3b8;
-        stroke-width: 3;
+      .hero-art-source-staff line {
+        stroke: #cbd5e1;
+        stroke-width: 1.5;
+      }
+
+      .hero-art-notes line {
+        stroke: #334155;
+        stroke-width: 2.25;
         stroke-linecap: round;
       }
 
-      .hero-art-branch {
-        stroke: #64748b;
-        opacity: 0.85;
+      .hero-art-beam {
+        stroke-width: 5 !important;
       }
 
-      .hero-art-note {
+      .hero-art-notehead {
         fill: #334155;
+      }
+
+      .hero-art-branches path {
+        fill: none;
+        stroke: #94a3b8;
+        stroke-width: 2;
+        stroke-linecap: round;
+        opacity: 0.75;
+      }
+
+      .hero-art-fragment line {
+        stroke: #cbd5e1;
+        stroke-width: 1.25;
+      }
+
+      .hero-art-fragment text {
+        font-size: 1.4rem;
+        fill: #ff8c00;
       }
 
       .hero-scroll-cue {
@@ -1082,23 +1193,30 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         color: var(--theme-accent, #888);
       }
 
-      /* Presets, restyled as track cards rather than a flat button row --
-         still real <button type="button"> elements, only the CSS changed. */
+      /* Presets, restyled as compact selectable cards rather than a flat
+         button row -- still real <button type="button"> elements, only the
+         CSS changed. Each card shows the preset name plus a subtle
+         secondary "Source Style" label, except Clear which has no style. */
       .preset-tracks {
         display: flex;
         flex-wrap: wrap;
         gap: 0.6rem;
       }
 
-      .track-button {
+      .preset-card {
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+        min-width: 8rem;
         background: var(--theme-surface-elevated, #f5f5f5);
         color: var(--theme-text, #1a1a1a);
         border: 1px solid var(--theme-border, #ccc);
-        border-radius: 999px;
-        padding: 0.55rem 1.15rem;
+        border-radius: 10px;
+        padding: 0.55rem 0.9rem;
         font: inherit;
-        font-size: 0.9rem;
+        text-align: left;
         cursor: pointer;
         transition:
           border-color 150ms ease,
@@ -1106,21 +1224,34 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
           background-color 150ms ease;
       }
 
-      .track-button:hover {
+      .preset-card-name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .preset-card-style {
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        color: var(--theme-accent, #888);
+      }
+
+      .preset-card:hover {
         border-color: var(--theme-accent, #888);
       }
 
-      .track-button:active {
+      .preset-card:active {
         transform: scale(0.97);
       }
 
-      .track-button:focus-visible {
+      .preset-card:focus-visible {
         outline: 2px solid #ff8c00;
         outline-offset: 2px;
       }
 
-      .track-button--clear {
+      .preset-card--clear {
         border-style: dashed;
+        justify-content: center;
       }
 
       /* Source/Target style controls, grouped in one panel with a
@@ -1173,9 +1304,17 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         color: var(--theme-accent, #888);
       }
 
+      /* Play/Stop live inside .style-form now (Style is the one command
+         area: Source, Target, Play, Stop) -- flex-basis: 100% drops the
+         transport onto its own row below the two selects, with a divider
+         so it reads as attached to the form rather than merely stacked. */
       .transport {
         display: flex;
+        flex-basis: 100%;
         gap: 0.75rem;
+        margin-top: 0.5rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--theme-border, #ccc);
       }
 
       .transport-button {
@@ -1387,6 +1526,15 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
           gap: 0.25rem 0.75rem;
           padding: 0 1rem;
           margin-bottom: 1rem;
+        }
+
+        .preset-card {
+          min-width: 0;
+          flex: 1 1 calc(50% - 0.3rem);
+        }
+
+        .transport-button {
+          flex: 1 1 0;
         }
 
         .world {
