@@ -1,83 +1,29 @@
-# Process overview
-
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and each brief adds its own word count and moment count.
+# Process
 
 ## What I built
 
-One paragraph: the thing, and the idea behind it.
+I built **One Melody, Many Worlds**, an interactive music explainer that lets users hear and see how the same melody changes when it is mapped between different musical scales and traditions. It started as a fairly simple idea where the user would choose a preset melody and a target scale, but it gradually became a much more interactive tool. The final version includes presets from different musical traditions, source-to-target scale transformation, a polyphonic piano-roll editor, sampled instruments, playback, a live keyboard and waveform, and visual themes that change with the selected musical style.
 
-## The moments that mattered
+## Moment 1 — The transformation was technically correct, but sounded wrong
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+My first approach to transforming between scales relied heavily on nearest-note quantisation. It passed the tests and produced valid notes, but when I actually listened to melodies such as Mo Li Hua, repeated notes would sometimes wobble between different pitches. Instead of adding special cases for individual melodies, I changed the architecture so transformations between five-note and seven-note scales go through a canonical Major Pentatonic/Major bridge. This made the lossy part of the transformation explicit and kept the rest of the mapping deterministic. I added regression tests for repeated notes and manually listened to Mo Li Hua under several target scales to verify that the repeated notes remained stable.
 
-1. **what happened** --- the problem, or the thing the agent got wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+[`353c569`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-u7488099/commit/353c569989eedc4705c113174b3e122a9094a209)
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** rather than in another prompt --- a rule added to
-`CLAUDE.md`, a check wired up, an attempt thrown away: re-prompting until it
-passes is the routine case, and changing what the agent works against is the
-skilled one.
+## Moment 2 — The editor passed tests but looked completely broken
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
+When I first built the piano-roll editor, automated checks said that clicking and dragging were changing the composition correctly. When I opened the site myself, however, clicking appeared to do nothing. The problem turned out not to be the editor state at all. Astro's scoped CSS was not applying to grid elements created dynamically with `document.createElement()`, so the notes existed but were visually indistinguishable from empty cells. I moved the dynamically-created grid styles into a global style block rather than rewriting the interaction system. I then changed the browser verification to check actual computed colours and element dimensions instead of only checking classes and state. This was a useful reminder that passing functional tests does not necessarily mean the interface actually works for a user.
 
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
+[`81ac9d7`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-u7488099/commit/81ac9d72c01c05e01a9739213f6ea191fe5bfc47)
 
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
+## Moment 3 — Supporting chords changed the data model
 
-> the prompt, verbatim
+I originally considered a monophonic editor, but I decided that a music editor should allow multiple notes at the same time. The existing sequential `MelodyEvent[]` representation could not represent this cleanly. Rather than adding exceptions to it, I introduced a separate composition model where every note has an explicit pitch, start step and length. Playback was also generalised from a shared time cursor to explicitly timed playback events. This allowed chords, overlapping notes and silence without introducing a special rest object into the editor. I tested simultaneous notes, overlapping durations and Stop behaviour, then manually tested creating chords in the piano roll.
 
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
+[`e75d8b7`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-u7488099/commit/e75d8b767df932cf802c93e23c792f41a6e9ebea)
 
-### A worked moment, for shape
+## Moment 4 — Passing tests was not the same as sounding good
 
-Delete this section along with the rest of the boilerplate --- it's here to show
-the four jobs in one paragraph, not to be imitated in content.
+One of the biggest lessons came from the instruments. I initially used Web Audio oscillators to synthesise different timbres for each musical style. Structurally it worked, the tests passed, and every style produced a different sound, but when I listened to it the result sounded bad. Instead of accepting something because it was technically correct, I replaced most of the synthesised instruments with appropriately licensed samples such as piano, guitar, oud and Asian plucked-string instruments. I added lazy loading and caching, documented the sources and licences, and kept the samples going through the existing analyser and playback architecture. This was probably the clearest example in the project where manually experiencing the product mattered more than another automated test.
 
-> The date formatter kept coming back with `toLocaleDateString()` and no locale
-> argument, so the same build rendered differently on my machine and in CI. I'd
-> already re-prompted it twice, which fixed the line but not the habit, so the
-> third time I put the rule in `CLAUDE.md` instead
-> ([`3f9ac21`](https://github.com/YOUR-ORG/YOUR-REPO/commit/3f9ac21)) and added
-> a spec test that fails on a bare `toLocaleDateString`. That's what told me it
-> had actually taken: the test went red against the old code and green against
-> the new, and the next two features it wrote passed it without prompting
-> ([`3f9ac21...b7e0d14`](https://github.com/YOUR-ORG/YOUR-REPO/compare/3f9ac21...b7e0d14)).
-
-## Before you ship
-
-`pnpm check:evidence` verifies your citations resolve to real commits, that the
-current reflection entry is in `reflections/`, and that your `CLAUDE.md` is
-there --- before a marker ever opens the file. It checks that your map is
-traceable, not that it is good: the marker judges whether your small,
-deliberately chosen set of moments shows real judgement and reflection. A green
-check is not a substitute for that curation.
-
-Images are deliberately not checked, because whether one renders is visible the
-moment you look. Open this file on GitHub and look at it before you ship.
+[`f0b7fad`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-u7488099/commit/f0b7fadeafb8bfb94382a8b05b0cd1110d20dd72)
