@@ -15,27 +15,43 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
     <title>One Melody, Many Worlds</title>
   </head>
   <body>
-    <header>
-      <nav aria-label="Primary">
-        <a href="./">Home</a>
-      </nav>
-    </header>
     <main>
-      <div class="intro">
-        <h1>One Melody, Many Worlds</h1>
-        <p>
-          Pick a scale. The melody stays the same — same notes, same rhythm,
-          same starting pitch — only the scale each note is drawn from
-          changes. A scale is one ingredient of a musical tradition, not the
-          whole thing: this isn't "this melody, but Chinese/Japanese/Arabic,"
-          it's the same tune reinterpreted through a different set of
-          intervals.
-        </p>
-      </div>
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>One Melody, Many Worlds</h1>
+          <p>
+            Choose a melody, send it into another musical world, and hear how
+            the same musical idea changes when its pitch vocabulary
+            transforms.
+          </p>
+        </div>
+        <svg class="hero-art" viewBox="0 0 640 240" role="img" aria-hidden="true" focusable="false">
+          <path class="hero-art-trunk" d="M20,120 C90,120 130,120 200,120" />
+          <path class="hero-art-branch" d="M200,120 C280,120 340,70 480,40" />
+          <path class="hero-art-branch" d="M200,120 C280,120 340,110 480,105" />
+          <path class="hero-art-branch" d="M200,120 C280,120 340,135 480,170" />
+          <path class="hero-art-branch" d="M200,120 C280,120 340,160 480,215" />
+          <circle class="hero-art-note" cx="20" cy="120" r="7" />
+          <circle class="hero-art-note" cx="480" cy="40" r="6" />
+          <circle class="hero-art-note" cx="480" cy="105" r="6" />
+          <circle class="hero-art-note" cx="480" cy="170" r="6" />
+          <circle class="hero-art-note" cx="480" cy="215" r="6" />
+        </svg>
+        <div class="hero-scroll-cue" aria-hidden="true"><span></span></div>
+      </section>
+
+      <nav class="section-nav" aria-label="Sections">
+        <a href="#presets">Presets</a>
+        <a href="#style-controls">Style</a>
+        <a href="#playback">Playback</a>
+        <a href="#waveform">Waveform</a>
+        <a href="#keyboard">Keyboard</a>
+        <a href="#composition-editor">Composition editor</a>
+      </nav>
 
       <div class="theme-scope world" data-scale-theme="major" data-testid="theme-scope">
         <div class="world-inner">
-          <section class="panel" aria-label="Presets">
+          <section class="panel" id="presets" aria-label="Presets">
             <h2>Presets</h2>
             <div class="preset-tracks">
               <button type="button" class="track-button" data-testid="editor-preset-twinkle">
@@ -51,7 +67,7 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
             </div>
           </section>
 
-          <section class="panel" aria-label="Style controls">
+          <section class="panel" id="style-controls" aria-label="Style controls">
             <h2>Style</h2>
             <form class="style-form">
               <div class="style-field">
@@ -91,9 +107,14 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
               When target style differs from style, a second row group below shows where your notes move; Play
               plays the transformed result.
             </p>
+            <p class="hint">
+              A scale is one ingredient of a musical tradition, not the whole
+              thing: this isn't "this melody, but Chinese/Japanese/Arabic," it's
+              the same tune reinterpreted through a different set of intervals.
+            </p>
           </section>
 
-          <section class="panel" aria-label="Playback">
+          <section class="panel" id="playback" aria-label="Playback">
             <h2>Playback</h2>
             <div class="transport">
               <button type="button" class="transport-button transport-button--play" data-testid="editor-play-button"
@@ -105,35 +126,40 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
             </div>
           </section>
 
-          <section class="panel" aria-label="Waveform">
-            <h2>Waveform</h2>
-            <p id="waveform-description">
-              A live view of the audio signal while it plays; calm and flat when nothing is sounding.
-            </p>
-            <div class="waveform-panel">
-              <canvas
-                data-testid="editor-waveform"
-                role="img"
-                aria-label="Live audio waveform"
-                aria-describedby="waveform-description"
-              ></canvas>
-            </div>
-          </section>
+          <section class="panel performance-panel" id="performance" aria-label="Performance">
+            <h2>Performance</h2>
+            <div class="performance-layout">
+              <div class="performance-column performance-waveform" id="waveform">
+                <h3>Waveform</h3>
+                <p id="waveform-description">
+                  A live view of the audio signal while it plays; calm and flat when nothing is sounding.
+                </p>
+                <div class="waveform-panel">
+                  <canvas
+                    data-testid="editor-waveform"
+                    role="img"
+                    aria-label="Live audio waveform"
+                    aria-describedby="waveform-description"
+                  ></canvas>
+                </div>
+              </div>
 
-          <section class="panel" aria-label="Keyboard">
-            <h2>Keyboard</h2>
-            <div class="piano-scroll">
-              <div
-                class="piano"
-                data-testid="editor-keyboard"
-                role="img"
-                aria-label="Piano keyboard showing currently sounding notes"
-              >
+              <div class="performance-column performance-keyboard" id="keyboard">
+                <h3>Keyboard</h3>
+                <div class="piano-scroll">
+                  <div
+                    class="piano"
+                    data-testid="editor-keyboard"
+                    role="img"
+                    aria-label="Piano keyboard showing currently sounding notes"
+                  >
+                  </div>
+                </div>
               </div>
             </div>
           </section>
 
-          <section class="panel" aria-label="Composition editor">
+          <section class="panel" id="composition-editor" aria-label="Composition editor">
             <h2>Composition editor</h2>
             <p class="piece-caption" data-testid="piece-caption" hidden></p>
             <p>
@@ -189,11 +215,12 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         stepForBlockColumn,
         STEPS_PER_BLOCK,
       } from "../lib/editorGrid.ts";
-      import { BEAT_SECONDS, getAnalyser, playerEvents, playEvents, stop } from "../lib/audio.ts";
+      import { BEAT_SECONDS, getAnalyser, getAudioContext, playerEvents, playEvents, stop } from "../lib/audio.ts";
       import { JOY_TO_THE_WORLD, MO_LI_HUA, type Melody, TWINKLE_TWINKLE } from "../lib/melodies.ts";
       import { keyboardKeys, withVoiceEnded, withVoiceStarted, type VoiceCounts } from "../lib/keyboard.ts";
       import { idlePoints, waveformPoints } from "../lib/waveform.ts";
       import { themeForScale } from "../lib/themes.ts";
+      import { preloadTimbre, timbreForScale } from "../lib/timbres.ts";
 
       const BARS_PER_BLOCK = BARS / BLOCKS;
 
@@ -807,9 +834,30 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         renderAll();
       });
 
-      playButton.addEventListener("click", () => {
-        playEvents(renderComposition(composition, targetSelect.value, BEAT_SECONDS));
-        startVisualizer();
+      // Sample-backed timbres (see timbres.ts/sampler.ts) need their
+      // recordings decoded before playEvents() can build voices for them --
+      // that decode is async, so it has to finish before this click ever
+      // reaches playEvents(). Most target styles are cached after the first
+      // Play (preloadTimbre resolves near-instantly once decoded), so the
+      // loading label only ever shows on an instrument's actual first use.
+      // A failed fetch/decode is caught rather than left to throw out of the
+      // click handler -- playback just doesn't start that click, same as if
+      // the user hadn't pressed Play at all.
+      const PLAY_BUTTON_LABEL = playButton.textContent ?? "Play";
+      playButton.addEventListener("click", async () => {
+        const timbre = timbreForScale(targetSelect.value);
+        playButton.disabled = true;
+        playButton.textContent = "Loading…";
+        try {
+          await preloadTimbre(getAudioContext(), timbre);
+          playEvents(renderComposition(composition, targetSelect.value, BEAT_SECONDS), timbre);
+          startVisualizer();
+        } catch (error) {
+          console.error("failed to load instrument samples for playback", error);
+        } finally {
+          playButton.disabled = false;
+          playButton.textContent = PLAY_BUTTON_LABEL;
+        }
       });
       stopButton.addEventListener("click", stop);
 
@@ -825,10 +873,111 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         margin: 0;
       }
 
-      .intro {
+      /* .hero stays a fixed, culturally-neutral zone outside .theme-scope --
+         its palette is hand-picked once here, never driven by --theme-*
+         tokens, so switching Target style never touches it. The branching
+         SVG is one line splitting into four -- a melody entering many
+         musical worlds -- not tied to any particular target style's
+         iconography. */
+      .hero {
         max-width: 40rem;
-        margin: 0 auto 2rem;
+        margin: 0 auto;
+        padding-bottom: 1.5rem;
+        text-align: center;
         box-sizing: border-box;
+      }
+
+      .hero-copy h1 {
+        margin: 0 0 0.75rem;
+        font-size: 2.1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .hero-copy p {
+        margin: 0 auto;
+        max-width: 34rem;
+        color: #475569;
+        font-size: 1.05rem;
+      }
+
+      .hero-art {
+        display: block;
+        width: min(100%, 30rem);
+        height: auto;
+        margin: 1.5rem auto 0.25rem;
+      }
+
+      .hero-art-trunk,
+      .hero-art-branch {
+        fill: none;
+        stroke: #94a3b8;
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+
+      .hero-art-branch {
+        stroke: #64748b;
+        opacity: 0.85;
+      }
+
+      .hero-art-note {
+        fill: #334155;
+      }
+
+      .hero-scroll-cue {
+        display: flex;
+        justify-content: center;
+        margin-top: 0.5rem;
+      }
+
+      .hero-scroll-cue span {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-right: 2px solid #94a3b8;
+        border-bottom: 2px solid #94a3b8;
+        transform: rotate(45deg);
+        animation: hero-scroll-bounce 1.6s ease-in-out infinite;
+      }
+
+      @keyframes hero-scroll-bounce {
+        0%,
+        100% {
+          transform: rotate(45deg) translate(0, 0);
+        }
+        50% {
+          transform: rotate(45deg) translate(0.3rem, 0.3rem);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hero-scroll-cue span {
+          animation: none;
+        }
+      }
+
+      /* In-page jump links between panel sections -- sits outside .theme-scope
+         like .hero, so it stays neutral across every Target style. */
+      .section-nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem 1rem;
+        max-width: 72rem;
+        margin: 0 auto 1.5rem;
+        padding: 0 2rem;
+      }
+
+      .section-nav a {
+        color: #64748b;
+        font-size: 0.85rem;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+      }
+
+      .section-nav a:hover,
+      .section-nav a:focus-visible {
+        color: #334155;
+        border-bottom-color: currentcolor;
       }
 
       .hint {
@@ -1062,6 +1211,41 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
         outline-offset: 2px;
       }
 
+      /* Waveform and Keyboard, previously two separate stacked panels, now
+         live side-by-side inside one "Performance" card -- desktop shows
+         both at once (roughly 42/58 so the taller 3-octave keyboard gets
+         the wider share), mobile stacks them (see the 37.5em query below).
+         min-width: 0 lets each column shrink below its content's intrinsic
+         width so .piano-scroll's own overflow-x:auto handles a too-narrow
+         keyboard internally, instead of the flex item forcing the whole
+         row wider than its column. */
+      .performance-layout {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+      }
+
+      .performance-column {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .performance-waveform {
+        flex-basis: 42%;
+      }
+
+      .performance-keyboard {
+        flex-basis: 58%;
+      }
+
+      .performance-column h3 {
+        margin: 0 0 0.6rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        color: var(--theme-muted, #666);
+        font-weight: 600;
+      }
+
       .waveform-panel {
         position: relative;
         box-sizing: border-box;
@@ -1179,6 +1363,32 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
       }
 
       @media (max-width: 37.5em) {
+        .hero {
+          padding-bottom: 1rem;
+        }
+
+        .hero-copy h1 {
+          font-size: 1.5rem;
+        }
+
+        .hero-copy p {
+          font-size: 0.95rem;
+        }
+
+        .hero-art {
+          margin-top: 1rem;
+        }
+
+        .hero-scroll-cue {
+          display: none;
+        }
+
+        .section-nav {
+          gap: 0.25rem 0.75rem;
+          padding: 0 1rem;
+          margin-bottom: 1rem;
+        }
+
         .world {
           padding: 1.25rem 1rem 1.75rem;
           border-radius: 14px;
@@ -1198,6 +1408,16 @@ const BARS_PER_BLOCK = BARS / BLOCKS;
 
         .piano-scroll::after {
           background-image: none;
+        }
+
+        .performance-layout {
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+
+        .performance-waveform,
+        .performance-keyboard {
+          flex-basis: auto;
         }
 
         [data-scale-theme="hijaz"] .waveform-panel {

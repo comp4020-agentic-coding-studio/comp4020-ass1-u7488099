@@ -1,0 +1,80 @@
+[
+  {
+    "index": 0,
+    "note": "C3",
+    "freq": "129.33",
+    "file": "C3.wav"
+  },
+  {
+    "index": 1,
+    "note": "Ds3",
+    "freq": "153.66",
+    "file": "Ds3.wav"
+  },
+  {
+    "index": 2,
+    "note": "Fs3",
+    "freq": "182.99",
+    "file": "Fs3.wav"
+  },
+  {
+    "index": 3,
+    "note": "A3",
+    "freq": "217.24",
+    "file": "A3.wav"
+  },
+  {
+    "index": 4,
+    "note": "C4",
+    "freq": "257.89",
+    "file": "C4.wav"
+  },
+  {
+    "index": 5,
+    "note": "Ds4",
+    "freq": "306.25",
+    "file": "Ds4.wav"
+  },
+  {
+    "index": 6,
+    "note": "Fs4",
+    "freq": "364.46",
+    "file": "Fs4.wav"
+  },
+  {
+    "index": 7,
+    "note": "A4",
+    "freq": "436.63",
+    "file": "A4.wav"
+  },
+  {
+    "index": 8,
+    "note": "C5",
+    "freq": "518.82",
+    "file": "C5.wav"
+  },
+  {
+    "index": 9,
+    "note": "Ds5",
+    "freq": "612.50",
+    "file": "Ds5.wav"
+  },
+  {
+    "index": 10,
+    "note": "Fs5",
+    "freq": "735.00",
+    "file": "Fs5.wav"
+  },
+  {
+    "index": 11,
+    "note": "A5",
+    "freq": "864.71",
+    "file": "A5.wav"
+  },
+  {
+    "index": 12,
+    "note": "C6",
+    "freq": "1025.58",
+    "file": "C6.wav"
+  }
+]

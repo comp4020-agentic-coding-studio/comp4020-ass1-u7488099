@@ -37,24 +37,40 @@ export function createEmptyComposition(sourceScale: string): Composition {
   return { sourceScale, notes: [] };
 }
 
-// The grid's available pitch rows for a source style: two octaves,
-// tonic-up (scaleStep 0 through 2*cardinality - 1). A sensible default
-// window for freeform composition and for any composition that stays
-// within it -- a loaded preset whose register dips below the tonic (e.g.
-// Mo Li Hua's scaleStep -2) needs pitchRowsForComposition below instead,
-// which widens this default rather than replacing it.
+// The grid's available pitch rows for a source style, derived from the
+// fixed C3-C6 editing range rather than a hardcoded row count. Every entry
+// in SCALES starts with 0 (its own tonic sits 0 semitones from the scale's
+// root), and CANONICAL_TONIC ("C4") is always scaleStep 0 -- so C is a
+// valid scale degree at *every* octave, for every scale, meaning C3 always
+// sits at exactly scaleStep -cardinality and C6 always sits at exactly
+// scaleStep 2*cardinality. That gives a clean, cardinality-driven window
+// with no special-casing: a 7-note scale gets 3*7+1 = 22 rows, a 5-note
+// scale gets 3*5+1 = 16 rows, and both span exactly C3 to C6 -- matching
+// the visual piano keyboard's own fixed C3-C6 range (see keyboard.ts) so
+// the editor and the keyboard always represent the same pitch bounds. This
+// is editing headroom, not a transposition: root/octave-register/note-
+// count/rhythm are untouched by any of this (see CLAUDE.md's controlled-
+// comparison rule) -- widening the row window only changes which rows a
+// user *could* place a note on, never what an existing note means.
+const EDITOR_LOW_OCTAVE_SHIFT = -1; // C3: one octave below the canonical C4 tonic
+const EDITOR_HIGH_OCTAVE_SHIFT = 2; // C6: two octaves above the canonical C4 tonic
+
 export function pitchRowsForScale(sourceScale: string): number[] {
   const cardinality = SCALES[sourceScale]?.length;
   if (cardinality === undefined) throw new Error(`unknown scale: "${sourceScale}"`);
-  return Array.from({ length: cardinality * 2 }, (_, row) => row);
+  const start = EDITOR_LOW_OCTAVE_SHIFT * cardinality;
+  const end = EDITOR_HIGH_OCTAVE_SHIFT * cardinality;
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
 // The grid's row window for a *specific* composition: pitchRowsForScale's
-// tonic-up default, widened (never narrowed) just enough to include every
-// scaleStep the composition actually uses. A composition that stays within
-// the default two-octave window (true for any hand-drawn composition, and
-// for most presets) renders identically to pitchRowsForScale; only a preset
-// like Mo Li Hua, whose body dips below the tonic, grows the window.
+// C3-C6 default, widened (never narrowed) just enough to include every
+// scaleStep the composition actually uses. Every hand-drawn composition
+// stays within the default window by construction (the editor UI can only
+// place a note on a row it renders), so this only ever matters for a
+// transformed target-scale view (transformCompositionToTarget) whose
+// mapped scaleSteps might otherwise fall outside that target scale's own
+// default C3-C6 window.
 export function pitchRowsForComposition(composition: Composition): number[] {
   const base = pitchRowsForScale(composition.sourceScale);
   if (composition.notes.length === 0) return base;

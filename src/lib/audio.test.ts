@@ -1,30 +1,33 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { BEAT_SECONDS, getAnalyser, play, playerEvents, playEvents, stop } from "./audio.ts";
-import { RENDERED_REST } from "./melodies.ts";
+import { BEAT_SECONDS, getAnalyser, playerEvents, playEvents, stop } from "./audio.ts";
+import type { CreateVoiceParams, TimbreDefinition, Voice } from "./timbres.ts";
 
 // A fake rather than a real AudioContext -- jsdom/node don't implement Web
-// Audio, and the point here is only to prove play()/stop()'s scheduling and
-// event-dispatch logic: a rest must skip oscillator creation (no sound)
-// while still advancing `time` by its full duration (silence takes up real
-// time); stop() must reach every currently-scheduled voice, not just ones
-// already sounding.
+// Audio, and the point here is only to prove playEvents()/stop()'s
+// scheduling and event-dispatch logic, decoupled from any particular
+// timbre's synthesis details (those live in timbres.test.ts instead).
+// testTimbre below is a minimal single-oscillator/single-gain voice so this
+// file's assertions read exactly like the original inline sine-wave voice
+// audio.ts used to build itself.
 //
 // audio.ts lazily creates its AudioContext once and reuses it across every
-// play() call (by design -- see audio.ts), so the stub is installed once for
-// the whole file, not per test; each test instead records where in the
-// shared `oscillators` array it starts, so it only inspects the oscillators
-// its own play() call created.
+// playEvents() call (by design -- see audio.ts), so the stub is installed
+// once for the whole file, not per test; each test instead records where in
+// the shared `oscillators` array it starts, so it only inspects the
+// oscillators its own playEvents() call created.
 
 class FakeParam {
   value = 0;
   setValueAtTime = vi.fn();
   linearRampToValueAtTime = vi.fn();
+  exponentialRampToValueAtTime = vi.fn();
   cancelScheduledValues = vi.fn();
 }
 
 class FakeOscillator {
   type = "";
   frequency = new FakeParam();
+  detune = new FakeParam();
   connect = vi.fn();
   start = vi.fn();
   stop = vi.fn();
@@ -40,15 +43,21 @@ class FakeAnalyser {
   connect = vi.fn();
 }
 
+class FakeCompressor {
+  connect = vi.fn();
+}
+
 let oscillators: FakeOscillator[];
 let gains: FakeGain[];
 let analysersCreated: FakeAnalyser[];
+let compressorsCreated: FakeCompressor[];
 let destination: object;
 
 beforeAll(() => {
   oscillators = [];
   gains = [];
   analysersCreated = [];
+  compressorsCreated = [];
   destination = {};
   class FakeAudioContext {
     currentTime = 0;
@@ -68,6 +77,11 @@ beforeAll(() => {
       analysersCreated.push(analyser);
       return analyser;
     }
+    createDynamicsCompressor(): FakeCompressor {
+      const compressor = new FakeCompressor();
+      compressorsCreated.push(compressor);
+      return compressor;
+    }
   }
   vi.stubGlobal("AudioContext", FakeAudioContext);
 });
@@ -76,40 +90,92 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
+// Mirrors the original inline voice playEvents() used to build itself,
+// before that construction moved into timbres.ts: one oscillator, one gain,
+// a short linear fade in/out. Kept local to this file so audio.ts's own
+// scheduling logic can be tested without coupling to any real TIMBRES entry.
+const testTimbre: TimbreDefinition = {
+  id: "test",
+  label: "test",
+  family: "piano",
+  instrumentId: null,
+  createVoice: ({ context, destination, frequency, noteStart, durationSeconds }: CreateVoiceParams): Voice => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    oscillator.connect(gain);
+    gain.connect(destination);
+
+    const noteEnd = noteStart + durationSeconds;
+    const fade = Math.min(0.02, durationSeconds / 4);
+    gain.gain.setValueAtTime(0, noteStart);
+    gain.gain.linearRampToValueAtTime(0.2, noteStart + fade);
+    gain.gain.linearRampToValueAtTime(0, noteEnd - fade);
+
+    oscillator.start(noteStart);
+    oscillator.stop(noteEnd);
+    return { sources: [oscillator], gains: [gain] };
+  },
+};
+
+// play()'s old cumulative-start-time/rest-skipping wrapper is gone from
+// audio.ts (composition.ts#sequentialToComposition/renderComposition already
+// covers that behavior on the real production path -- see
+// composition.test.ts). This local helper reproduces just enough of it to
+// keep exercising playEvents() with sequential, rest-aware note lists.
+function playSequential(pitchNames: (string | null)[], durations: number[]): void {
+  const events: { pitchName: string; startSeconds: number; durationSeconds: number }[] = [];
+  let cursor = 0;
+  pitchNames.forEach((pitchName, i) => {
+    const durationSeconds = durations[i] * BEAT_SECONDS;
+    if (pitchName !== null) events.push({ pitchName, startSeconds: cursor, durationSeconds });
+    cursor += durationSeconds;
+  });
+  playEvents(events, testTimbre);
+}
+
 // audio.ts's `analyser` module state is created once, lazily, on the very
 // first playEvents() call and never reset by stop() -- unlike
 // activeVoices/pendingTimers, which are cleared per-performance. So the
 // "not yet created" case can only be observed here, before any other
-// describe block below has called play()/playEvents().
-describe("shared analyser (must run before any play()/playEvents() call above touches module state)", () => {
+// describe block below has called playEvents().
+describe("shared analyser (must run before any playEvents() call above touches module state)", () => {
   it("is null until the first playEvents() call", () => {
     expect(getAnalyser()).toBeNull();
   });
 
-  it("is created on first play(), connected once to destination, and every voice's gain routes through it", () => {
-    play(["C4"], [1]);
+  it("is created on first playEvents(), connected once to destination through a limiter, and every voice's gain routes through the limiter", () => {
+    playSequential(["C4"], [1]);
 
     const analyser = getAnalyser();
     expect(analyser).not.toBeNull();
     expect(analysersCreated).toHaveLength(1);
+    expect(compressorsCreated).toHaveLength(1);
+    const compressor = compressorsCreated[0];
+    expect(compressor.connect).toHaveBeenCalledTimes(1);
+    expect(compressor.connect).toHaveBeenCalledWith(analyser);
     expect(analyser!.connect).toHaveBeenCalledTimes(1);
     expect(analyser!.connect).toHaveBeenCalledWith(destination);
     expect(gains.at(-1)!.connect).toHaveBeenCalledTimes(1);
-    expect(gains.at(-1)!.connect).toHaveBeenCalledWith(analyser);
+    expect(gains.at(-1)!.connect).toHaveBeenCalledWith(compressor);
   });
 
-  it("reuses the same analyser instance across later performances, without reconnecting it", () => {
+  it("reuses the same analyser/limiter instances across later performances, without reconnecting them", () => {
     const before = getAnalyser();
+    const compressorBefore = compressorsCreated[0];
 
-    play(["D4", "E4"], [1, 1]); // a second, later performance
+    playSequential(["D4", "E4"], [1, 1]); // a second, later performance
 
     expect(getAnalyser()).toBe(before);
     expect(analysersCreated).toHaveLength(1); // still only ever created once
+    expect(compressorsCreated).toHaveLength(1); // still only ever created once
     expect(before!.connect).toHaveBeenCalledTimes(1); // still only ever connected once
-    // the new performance's voices still route through the one shared analyser
+    expect(compressorBefore.connect).toHaveBeenCalledTimes(1); // still only ever connected once
+    // the new performance's voices still route through the one shared limiter
     for (const gain of gains.slice(-2)) {
       expect(gain.connect).toHaveBeenCalledTimes(1);
-      expect(gain.connect).toHaveBeenCalledWith(before);
+      expect(gain.connect).toHaveBeenCalledWith(compressorBefore);
     }
   });
 
@@ -120,7 +186,7 @@ describe("shared analyser (must run before any play()/playEvents() call above to
   });
 });
 
-describe("play/stop", () => {
+describe("playEvents/stop", () => {
   afterEach(() => {
     stop(); // reset module-level playback state between tests, whatever a test left mid-flight
     vi.useRealTimers();
@@ -129,7 +195,7 @@ describe("play/stop", () => {
   it("skips oscillator creation for a rest but still advances scheduling time", () => {
     const startIndex = oscillators.length;
 
-    play(["C4", RENDERED_REST, "D4"], [1, 2, 1]);
+    playSequential(["C4", null, "D4"], [1, 2, 1]);
     const created = oscillators.slice(startIndex);
 
     // Not 3 -- no oscillator is ever created for the rest.
@@ -142,7 +208,7 @@ describe("play/stop", () => {
   it("advances scheduling time correctly when a rest is the first event", () => {
     const startIndex = oscillators.length;
 
-    play([RENDERED_REST, "C4"], [1.5, 1]);
+    playSequential([null, "C4"], [1.5, 1]);
     const created = oscillators.slice(startIndex);
 
     expect(created).toHaveLength(1);
@@ -152,7 +218,7 @@ describe("play/stop", () => {
   it("stop() immediately stops every currently scheduled voice, not just the one already sounding", () => {
     const startIndex = oscillators.length;
 
-    play(["C4", "D4", "E4"], [1, 1, 1]);
+    playSequential(["C4", "D4", "E4"], [1, 1, 1]);
     stop();
     const created = oscillators.slice(startIndex);
 
@@ -164,14 +230,14 @@ describe("play/stop", () => {
     }
   });
 
-  it("calling play() while already playing stops the previous performance before scheduling the new one", () => {
+  it("calling playEvents() while already playing stops the previous performance before scheduling the new one", () => {
     const startIndex = oscillators.length;
 
-    play(["C4", "D4"], [1, 1]);
+    playSequential(["C4", "D4"], [1, 1]);
     const firstBatch = oscillators.slice(startIndex);
     expect(firstBatch).toHaveLength(2);
 
-    play(["E4"], [1]);
+    playSequential(["E4"], [1]);
     const secondBatch = oscillators.slice(startIndex + firstBatch.length);
 
     // The first performance's voices were stopped (faded out), not left running.
@@ -198,7 +264,7 @@ describe("play/stop", () => {
     const record = (event: Event) => events.push({ type: event.type, detail: (event as CustomEvent).detail });
     for (const type of ["noteStart", "noteEnd", "stop"]) playerEvents.addEventListener(type, record);
 
-    play(["C4", "D4"], [1, 1]);
+    playSequential(["C4", "D4"], [1, 1]);
     vi.advanceTimersByTime(2 * BEAT_SECONDS * 1000 + 10);
 
     expect(events).toEqual([
@@ -218,7 +284,7 @@ describe("play/stop", () => {
     const record = (event: Event) => stopEvents.push((event as CustomEvent).detail);
     playerEvents.addEventListener("stop", record);
 
-    play(["C4", "D4", "E4"], [1, 1, 1]);
+    playSequential(["C4", "D4", "E4"], [1, 1, 1]);
     vi.advanceTimersByTime(BEAT_SECONDS * 1000); // let the first note start
     stop();
     vi.advanceTimersByTime(10 * BEAT_SECONDS * 1000); // well past the original performance's natural end
@@ -229,10 +295,10 @@ describe("play/stop", () => {
   });
 });
 
-// playEvents is the generalized scheduling core play() now wraps -- these
-// tests exercise the property play()'s one-running-cursor loop could never
-// have: two events with the same (or overlapping) startSeconds must both
-// sound, neither merged nor dropped.
+// playEvents schedules every event off its own start/duration rather than an
+// implied running cursor -- these tests exercise the property a sequential
+// wrapper could never have: two events with the same (or overlapping)
+// startSeconds must both sound, neither merged nor dropped.
 describe("playEvents (polyphony)", () => {
   afterEach(() => {
     stop();
@@ -242,10 +308,13 @@ describe("playEvents (polyphony)", () => {
   it("schedules simultaneous notes at the same start time without merging or dropping either", () => {
     const startIndex = oscillators.length;
 
-    playEvents([
-      { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
-      { pitchName: "E4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
-    ]);
+    playEvents(
+      [
+        { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+        { pitchName: "E4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+      ],
+      testTimbre,
+    );
     const created = oscillators.slice(startIndex);
 
     expect(created).toHaveLength(2);
@@ -256,10 +325,13 @@ describe("playEvents (polyphony)", () => {
   it("preserves each event's own start/duration when events overlap partially", () => {
     const startIndex = oscillators.length;
 
-    playEvents([
-      { pitchName: "C4", startSeconds: 0, durationSeconds: 2 * BEAT_SECONDS },
-      { pitchName: "E4", startSeconds: BEAT_SECONDS, durationSeconds: BEAT_SECONDS },
-    ]);
+    playEvents(
+      [
+        { pitchName: "C4", startSeconds: 0, durationSeconds: 2 * BEAT_SECONDS },
+        { pitchName: "E4", startSeconds: BEAT_SECONDS, durationSeconds: BEAT_SECONDS },
+      ],
+      testTimbre,
+    );
     const created = oscillators.slice(startIndex);
 
     expect(created[0].start).toHaveBeenCalledWith(0);
@@ -271,11 +343,14 @@ describe("playEvents (polyphony)", () => {
   it("stop() silences every simultaneous voice, not just one", () => {
     const startIndex = oscillators.length;
 
-    playEvents([
-      { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
-      { pitchName: "E4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
-      { pitchName: "G4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
-    ]);
+    playEvents(
+      [
+        { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+        { pitchName: "E4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+        { pitchName: "G4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+      ],
+      testTimbre,
+    );
     stop();
     const created = oscillators.slice(startIndex);
 
@@ -291,10 +366,13 @@ describe("playEvents (polyphony)", () => {
     const record = (event: Event) => stopEvents.push((event as CustomEvent).detail);
     playerEvents.addEventListener("stop", record);
 
-    playEvents([
-      { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
-      { pitchName: "E4", startSeconds: 0, durationSeconds: 3 * BEAT_SECONDS },
-    ]);
+    playEvents(
+      [
+        { pitchName: "C4", startSeconds: 0, durationSeconds: BEAT_SECONDS },
+        { pitchName: "E4", startSeconds: 0, durationSeconds: 3 * BEAT_SECONDS },
+      ],
+      testTimbre,
+    );
     vi.advanceTimersByTime(3 * BEAT_SECONDS * 1000 + 10);
 
     expect(stopEvents).toEqual([{ reason: "ended" }]);

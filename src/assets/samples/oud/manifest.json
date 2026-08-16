@@ -1,0 +1,155 @@
+[
+  {
+    "index": 0,
+    "startSec": "1.836",
+    "durSec": "0.780",
+    "freq": "77.64",
+    "note": "D#2",
+    "centsOff": "-3.1",
+    "file": "00_Ds2_77.6hz.wav"
+  },
+  {
+    "index": 1,
+    "startSec": "5.876",
+    "durSec": "1.024",
+    "freq": "104.50",
+    "note": "G#2",
+    "centsOff": "11.2",
+    "file": "01_Gs2_104.5hz.wav"
+  },
+  {
+    "index": 2,
+    "startSec": "11.043",
+    "durSec": "1.105",
+    "freq": "117.29",
+    "note": "A#2",
+    "centsOff": "11.1",
+    "file": "02_As2_117.3hz.wav"
+  },
+  {
+    "index": 3,
+    "startSec": "15.153",
+    "durSec": "1.151",
+    "freq": "130.09",
+    "note": "C3",
+    "centsOff": "-9.6",
+    "file": "03_C3_130.1hz.wav"
+  },
+  {
+    "index": 4,
+    "startSec": "19.135",
+    "durSec": "0.849",
+    "freq": "73.01",
+    "note": "D2",
+    "centsOff": "-9.5",
+    "file": "04_D2_73.0hz.wav"
+  },
+  {
+    "index": 5,
+    "startSec": "24.139",
+    "durSec": "0.884",
+    "freq": "164.55",
+    "note": "E3",
+    "centsOff": "-2.7",
+    "file": "05_E3_164.6hz.wav"
+  },
+  {
+    "index": 6,
+    "startSec": "28.202",
+    "durSec": "1.163",
+    "freq": "174.31",
+    "note": "F3",
+    "centsOff": "-3.0",
+    "file": "06_F3_174.3hz.wav"
+  },
+  {
+    "index": 7,
+    "startSec": "32.266",
+    "durSec": "0.954",
+    "freq": "185.29",
+    "note": "F#3",
+    "centsOff": "2.8",
+    "file": "07_Fs3_185.3hz.wav"
+  },
+  {
+    "index": 8,
+    "startSec": "36.167",
+    "durSec": "1.070",
+    "freq": "196.88",
+    "note": "G3",
+    "centsOff": "7.7",
+    "file": "08_G3_196.9hz.wav"
+  },
+  {
+    "index": 9,
+    "startSec": "40.149",
+    "durSec": "1.035",
+    "freq": "221.61",
+    "note": "A3",
+    "centsOff": "12.6",
+    "file": "09_A3_221.6hz.wav"
+  },
+  {
+    "index": 10,
+    "startSec": "44.247",
+    "durSec": "1.093",
+    "freq": "233.33",
+    "note": "A#3",
+    "centsOff": "1.9",
+    "file": "10_As3_233.3hz.wav"
+  },
+  {
+    "index": 11,
+    "startSec": "49.460",
+    "durSec": "0.908",
+    "freq": "247.75",
+    "note": "B3",
+    "centsOff": "5.7",
+    "file": "11_B3_247.8hz.wav"
+  },
+  {
+    "index": 12,
+    "startSec": "54.000",
+    "durSec": "1.128",
+    "freq": "260.95",
+    "note": "C4",
+    "centsOff": "-4.5",
+    "file": "12_C4_260.9hz.wav"
+  },
+  {
+    "index": 13,
+    "startSec": "57.889",
+    "durSec": "1.105",
+    "freq": "295.97",
+    "note": "D4",
+    "centsOff": "13.6",
+    "file": "13_D4_296.0hz.wav"
+  },
+  {
+    "index": 14,
+    "startSec": "62.719",
+    "durSec": "0.873",
+    "freq": "155.83",
+    "note": "D#3",
+    "centsOff": "3.0",
+    "file": "14_Ds3_155.8hz.wav"
+  },
+  {
+    "index": 15,
+    "startSec": "66.713",
+    "durSec": "0.838",
+    "freq": "165.17",
+    "note": "E3",
+    "centsOff": "3.7",
+    "file": "15_E3_165.2hz.wav"
+  },
+  {
+    "index": 16,
+    "startSec": "70.846",
+    "durSec": "0.908",
+    "freq": "347.24",
+    "note": "F4",
+    "centsOff": "-9.9",
+    "file": "16_F4_347.2hz.wav"
+  }
+]

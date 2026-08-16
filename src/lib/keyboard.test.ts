@@ -1,6 +1,27 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { playerEvents, playEvents, stop } from "./audio.ts";
 import { keyboardKeys, withVoiceEnded, withVoiceStarted, type VoiceCounts } from "./keyboard.ts";
+import type { CreateVoiceParams, TimbreDefinition, Voice } from "./timbres.ts";
+
+// A minimal single-oscillator/single-gain timbre -- this suite only cares
+// about noteStart/noteEnd/stop timing driving the reference-counting
+// reducer, not synthesis detail (see timbres.test.ts for that).
+const testTimbre: TimbreDefinition = {
+  id: "test",
+  label: "test",
+  family: "piano",
+  instrumentId: null,
+  createVoice: ({ context, destination, frequency, noteStart, durationSeconds }: CreateVoiceParams): Voice => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.value = frequency;
+    oscillator.connect(gain);
+    gain.connect(destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + durationSeconds);
+    return { sources: [oscillator], gains: [gain] };
+  },
+};
 
 describe("keyboardKeys", () => {
   it("spans exactly C3 to C6 inclusive, 37 chromatic keys, all distinct", () => {
@@ -97,6 +118,9 @@ describe("reference-counting driven by real playerEvents", () => {
       fftSize = 0;
       connect = vi.fn();
     }
+    class FakeCompressor {
+      connect = vi.fn();
+    }
     class FakeAudioContext {
       currentTime = 0;
       destination = {};
@@ -110,6 +134,9 @@ describe("reference-counting driven by real playerEvents", () => {
       }
       createAnalyser() {
         return new FakeAnalyser();
+      }
+      createDynamicsCompressor() {
+        return new FakeCompressor();
       }
     }
     oscillators = [];
@@ -157,10 +184,13 @@ describe("reference-counting driven by real playerEvents", () => {
     const sub = subscribe();
     vi.useFakeTimers();
 
-    playEvents([
-      { pitchName: "C4", startSeconds: 0, durationSeconds: 1 },
-      { pitchName: "C4", startSeconds: 0.5, durationSeconds: 1 },
-    ]);
+    playEvents(
+      [
+        { pitchName: "C4", startSeconds: 0, durationSeconds: 1 },
+        { pitchName: "C4", startSeconds: 0.5, durationSeconds: 1 },
+      ],
+      testTimbre,
+    );
 
     vi.advanceTimersByTime(0);
     expect("C4" in sub.counts).toBe(true);
@@ -178,10 +208,13 @@ describe("reference-counting driven by real playerEvents", () => {
     const sub = subscribe();
     vi.useFakeTimers();
 
-    playEvents([
-      { pitchName: "C4", startSeconds: 0, durationSeconds: 1 },
-      { pitchName: "E4", startSeconds: 0, durationSeconds: 2 },
-    ]);
+    playEvents(
+      [
+        { pitchName: "C4", startSeconds: 0, durationSeconds: 1 },
+        { pitchName: "E4", startSeconds: 0, durationSeconds: 2 },
+      ],
+      testTimbre,
+    );
 
     vi.advanceTimersByTime(0);
     expect(sub.counts).toEqual({ C4: 1, E4: 1 });
@@ -200,7 +233,7 @@ describe("reference-counting driven by real playerEvents", () => {
     const sub = subscribe();
     vi.useFakeTimers();
 
-    playEvents([{ pitchName: "C4", startSeconds: 0, durationSeconds: 5 }]);
+    playEvents([{ pitchName: "C4", startSeconds: 0, durationSeconds: 5 }], testTimbre);
     vi.advanceTimersByTime(0);
     expect("C4" in sub.counts).toBe(true);
 
@@ -214,7 +247,7 @@ describe("reference-counting driven by real playerEvents", () => {
     const sub = subscribe();
     vi.useFakeTimers();
 
-    playEvents([{ pitchName: "C4", startSeconds: 0, durationSeconds: 1 }]);
+    playEvents([{ pitchName: "C4", startSeconds: 0, durationSeconds: 1 }], testTimbre);
     vi.advanceTimersByTime(1000 + 10);
     expect(sub.counts).toEqual({});
 

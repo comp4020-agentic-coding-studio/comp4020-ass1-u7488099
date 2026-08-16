@@ -13,6 +13,7 @@ import {
   transformCompositionNoteToTargetStep,
   transformCompositionToTarget,
 } from "./composition.ts";
+import { placeNote } from "./editorGrid.ts";
 import { isRest, JOY_TO_THE_WORLD, MO_LI_HUA, r, TWINKLE_TWINKLE, type Melody, type MelodyNote } from "./melodies.ts";
 import { transformMelody } from "./transform.ts";
 
@@ -31,16 +32,30 @@ describe("createEmptyComposition", () => {
 });
 
 describe("pitchRowsForScale", () => {
-  it("returns two octaves (2 * cardinality rows), tonic-up, for a 7-note scale", () => {
-    expect(pitchRowsForScale("Major")).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+  it("returns a C3-C6 window (3 * cardinality + 1 rows) for a 7-note scale", () => {
+    expect(pitchRowsForScale("Major")).toEqual(Array.from({ length: 22 }, (_, i) => i - 7));
   });
 
-  it("returns two octaves (2 * cardinality rows), tonic-up, for a 5-note scale", () => {
-    expect(pitchRowsForScale("Major Pentatonic")).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it("returns a C3-C6 window (3 * cardinality + 1 rows) for a 5-note scale", () => {
+    expect(pitchRowsForScale("Major Pentatonic")).toEqual(Array.from({ length: 16 }, (_, i) => i - 5));
   });
 
   it("throws for an unknown scale name", () => {
     expect(() => pitchRowsForScale("nonexistent")).toThrow(/unknown scale/);
+  });
+
+  it("the lowest row is always C3, whatever the scale's cardinality", () => {
+    for (const scaleName of ["Major", "Hijaz", "Major Pentatonic", "In Sen"]) {
+      const lowestStep = pitchRowsForScale(scaleName)[0];
+      expect(transformCompositionNote(note(lowestStep, 0, 1), scaleName, scaleName)).toBe("C3");
+    }
+  });
+
+  it("the highest row is always C6, whatever the scale's cardinality", () => {
+    for (const scaleName of ["Major", "Hijaz", "Major Pentatonic", "In Sen"]) {
+      const highestStep = pitchRowsForScale(scaleName).at(-1)!;
+      expect(transformCompositionNote(note(highestStep, 0, 1), scaleName, scaleName)).toBe("C6");
+    }
   });
 });
 
@@ -126,16 +141,75 @@ describe("pitchRowsForComposition", () => {
     expect(pitchRowsForComposition(composition)).toEqual(pitchRowsForScale("Major"));
   });
 
-  it("widens downward to include a below-tonic scaleStep without narrowing the default's top", () => {
+  it("MO_LI_HUA's below-tonic scaleSteps already fit inside the expanded C3-C6 default -- no widening needed", () => {
+    // Before the C3-C6 expansion this widened the (narrower) default; now
+    // the default window alone already covers Mo Li Hua's full register.
     const composition = sequentialToComposition(MO_LI_HUA);
+    expect(pitchRowsForComposition(composition)).toEqual(pitchRowsForScale("Major Pentatonic"));
+  });
+
+  it("still widens for a scaleStep genuinely outside the C3-C6 window", () => {
+    const composition: Composition = { sourceScale: "Major Pentatonic", notes: [note(-20, 0, 4)] };
     const rows = pitchRowsForComposition(composition);
     const defaultRows = pitchRowsForScale("Major Pentatonic");
 
-    expect(Math.min(...rows)).toBeLessThanOrEqual(-2);
+    expect(Math.min(...rows)).toBe(-20);
     expect(Math.max(...rows)).toBe(defaultRows.at(-1));
     expect(rows).toEqual(
       Array.from({ length: Math.max(...rows) - Math.min(...rows) + 1 }, (_, i) => Math.min(...rows) + i),
     );
+  });
+});
+
+describe("expanded C3-C6 editor range", () => {
+  it("a note placed at the lowest row renders as C3, for a 7-note and a 5-note scale", () => {
+    for (const scaleName of ["Major", "Major Pentatonic"]) {
+      const lowestStep = pitchRowsForScale(scaleName)[0];
+      const composition = placeNote(createEmptyComposition(scaleName), lowestStep, 0, 4);
+      expect(renderComposition(composition, scaleName, BEAT_SECONDS)[0].pitchName).toBe("C3");
+    }
+  });
+
+  it("a note placed at the highest row renders as C6, for a 7-note and a 5-note scale", () => {
+    for (const scaleName of ["Major", "Major Pentatonic"]) {
+      const highestStep = pitchRowsForScale(scaleName).at(-1)!;
+      const composition = placeNote(createEmptyComposition(scaleName), highestStep, 0, 4);
+      expect(renderComposition(composition, scaleName, BEAT_SECONDS)[0].pitchName).toBe("C6");
+    }
+  });
+
+  it("supports polyphony at the expanded range: simultaneous notes at C3 and C6 both survive and render together", () => {
+    const rows = pitchRowsForScale("Major");
+    let composition = createEmptyComposition("Major");
+    composition = placeNote(composition, rows[0], 8, 4); // C3
+    composition = placeNote(composition, rows.at(-1)!, 8, 4); // C6
+
+    const events = renderComposition(composition, "Major", BEAT_SECONDS);
+    expect(events).toHaveLength(2);
+    expect(events.map((e) => e.pitchName).sort()).toEqual(["C3", "C6"]);
+    expect(events[0].startSeconds).toBe(events[1].startSeconds);
+  });
+
+  it("a target-style transform at the new lower extreme still preserves timing -- only pitch is free to differ", () => {
+    const lowestStep = pitchRowsForScale("Major")[0];
+    const composition: Composition = { sourceScale: "Major", notes: [note(lowestStep, 12, 3)] };
+
+    const asMajor = renderComposition(composition, "Major", BEAT_SECONDS);
+    const asHijaz = renderComposition(composition, "Hijaz", BEAT_SECONDS);
+
+    expect(asMajor[0].startSeconds).toBe(asHijaz[0].startSeconds);
+    expect(asMajor[0].durationSeconds).toBe(asHijaz[0].durationSeconds);
+    expect(asMajor[0].pitchName).toBe("C3");
+  });
+
+  it("presets still load with their exact original scaleSteps -- the wider window is editing headroom, not a transposition", () => {
+    expect(sequentialToComposition(TWINKLE_TWINKLE).notes[0].scaleStep).toBe(0);
+    expect(sequentialToComposition(JOY_TO_THE_WORLD).notes.map((n) => n.scaleStep)).toEqual([
+      7, 6, 5, 4, 3, 2, 1, 0,
+    ]);
+    const moliHuaSteps = sequentialToComposition(MO_LI_HUA).notes.map((n) => n.scaleStep);
+    expect(Math.min(...moliHuaSteps)).toBe(-2);
+    expect(Math.max(...moliHuaSteps)).toBe(5);
   });
 });
 
