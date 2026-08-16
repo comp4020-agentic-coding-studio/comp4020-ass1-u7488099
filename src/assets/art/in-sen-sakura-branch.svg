@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900">
+  <!-- Bespoke sumi-e-inspired sakura branch for the In Sen theme. One
+       dominant charcoal branch enters from the top-right corner at a
+       diagonal, tapering from thick to thin toward its tip, with two
+       thinner secondary forks. Blossom clusters concentrate along the
+       outer/tip two-thirds of the branch; the bottom-left two-thirds of
+       the canvas stays empty, reserved for the interface/waveform to sit
+       in. No Fuji, torii, or other iconography: branch and blossoms
+       only. -->
+  <defs>
+    <g id="isBlossom">
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#dda0b0" stroke="#a8637a" stroke-width="0.6" />
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#dda0b0" stroke="#a8637a" stroke-width="0.6" transform="rotate(72)" />
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#dda0b0" stroke="#a8637a" stroke-width="0.6" transform="rotate(144)" />
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#dda0b0" stroke="#a8637a" stroke-width="0.6" transform="rotate(216)" />
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#dda0b0" stroke="#a8637a" stroke-width="0.6" transform="rotate(288)" />
+      <circle r="3.4" fill="#a8455f" />
+    </g>
+    <g id="isPetal">
+      <path d="M0,0 C4,-6 10,-6 12,0 C10,6 4,6 0,0 Z" fill="#dda0b0" stroke="#a8637a" stroke-width="0.5" />
+    </g>
+  </defs>
+
+  <path d="M770,30 C740,70 700,95 668,140" fill="none" stroke="#2c2a28" stroke-width="20" stroke-linecap="round" />
+  <path d="M668,140 C630,190 600,215 566,262" fill="none" stroke="#2c2a28" stroke-width="14" stroke-linecap="round" />
+  <path d="M566,262 C530,305 495,330 452,368" fill="none" stroke="#2c2a28" stroke-width="9" stroke-linecap="round" />
+  <path d="M452,368 C420,398 385,420 352,448" fill="none" stroke="#2c2a28" stroke-width="4.5" stroke-linecap="round" />
+
+  <path d="M614,205 C570,170 530,130 498,78" fill="none" stroke="#3a3733" stroke-width="6" stroke-linecap="round" />
+  <path d="M498,78 C480,55 468,45 452,34" fill="none" stroke="#3a3733" stroke-width="2.5" stroke-linecap="round" />
+
+  <path d="M486,330 C540,355 585,375 628,412" fill="none" stroke="#3a3733" stroke-width="5" stroke-linecap="round" />
+  <path d="M628,412 C650,432 665,448 676,468" fill="none" stroke="#3a3733" stroke-width="2" stroke-linecap="round" />
+
+  <use href="#isBlossom" x="668" y="140" transform="rotate(15 668 140)" opacity="0.9" />
+  <use href="#isBlossom" x="566" y="262" transform="rotate(-25 566 262) scale(1.1)" opacity="0.95" />
+  <use href="#isBlossom" x="452" y="368" transform="rotate(40 452 368)" opacity="0.95" />
+  <use href="#isBlossom" x="352" y="448" transform="rotate(-10 352 448) scale(1.2)" />
+  <use href="#isBlossom" x="498" y="78" transform="rotate(60 498 78) scale(0.9)" />
+  <use href="#isBlossom" x="452" y="34" transform="rotate(20 452 34) scale(0.8)" />
+  <use href="#isBlossom" x="628" y="412" transform="rotate(-45 628 412) scale(1.05)" />
+  <use href="#isBlossom" x="676" y="468" transform="rotate(10 676 468) scale(0.85)" />
+  <use href="#isBlossom" x="510" y="300" transform="rotate(80 510 300) scale(0.9)" opacity="0.85" />
+  <use href="#isBlossom" x="400" y="410" transform="rotate(-60 400 410) scale(1.15)" />
+
+  <use id="petal-1" href="#isPetal" x="300" y="300" transform="rotate(35 306 300)" opacity="0.8" />
+  <use id="petal-2" href="#isPetal" x="560" y="500" transform="rotate(-70 566 500)" opacity="0.7" />
+  <use id="petal-3" href="#isPetal" x="230" y="180" transform="rotate(120 236 180) scale(0.8)" opacity="0.7" />
+  <use id="petal-4" href="#isPetal" x="700" y="560" transform="rotate(200 706 560) scale(0.9)" opacity="0.6" />
+</svg>

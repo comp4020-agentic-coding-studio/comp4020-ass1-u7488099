@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Bespoke shanshui-inspired ink-wash mountains for the Major Pentatonic
+       theme. Top half (y 0-450) stays empty by design: that's the
+       negative space the real waveform panel visually floats through when
+       this is composited as .world's background. Three tonal ridge layers,
+       aerial-perspective style (furthest = palest/softest, nearest =
+       darkest/most textured), asymmetric hand-drawn skylines rather than
+       geometric triangles, plus a single restrained vermilion seal accent.
+       No characters, figures, temples, or dragons. -->
+  <defs>
+    <filter id="mpSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="800" cy="645" rx="830" ry="28" fill="#3a3a3a" opacity="0.05" />
+  <ellipse cx="680" cy="555" rx="740" ry="20" fill="#3a3a3a" opacity="0.05" />
+
+  <path
+    d="M0,600 C120,518 210,585 320,498 C410,428 480,545 600,512 C700,485 770,575 880,535
+       C975,502 1070,595 1180,552 C1275,517 1370,578 1480,538 C1535,518 1580,552 1600,558
+       L1600,900 L0,900 Z"
+    fill="#3a3a3a"
+    opacity="0.17"
+    filter="url(#mpSoft)"
+  />
+
+  <path
+    d="M0,705 C95,638 195,682 300,600 C372,543 452,652 560,600 C655,555 730,662 840,608
+       C925,566 1030,650 1130,600 C1222,555 1325,662 1430,610 C1500,575 1560,608 1600,622
+       L1600,900 L0,900 Z"
+    fill="#3a3a3a"
+    opacity="0.37"
+  />
+
+  <path
+    d="M0,822 L58,792 C96,772 132,802 176,772 L226,800 C264,760 314,792 356,752
+       L406,780 C452,742 506,772 554,732 L616,760 C664,720 716,752 766,712
+       L826,745 C874,702 924,740 972,700 L1034,730 C1082,692 1134,725 1184,690
+       L1246,720 C1294,682 1346,715 1396,685 L1456,710 C1504,676 1554,700 1600,682
+       L1600,900 L0,900 Z"
+    fill="#2c2c2c"
+    opacity="0.62"
+  />
+
+  <ellipse cx="1508" cy="846" rx="13" ry="10" fill="#8a1f1f" opacity="0.9" transform="rotate(-10 1508 846)" />
+</svg>

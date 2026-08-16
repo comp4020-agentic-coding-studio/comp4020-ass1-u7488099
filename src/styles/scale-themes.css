@@ -403,15 +403,19 @@
     radial-gradient(ellipse 50% 35% at 80% 70%, rgb(58 58 58 / 5%), transparent 65%);
   --theme-texture-strength: 0.5;
 
-  /* Bespoke ink-mountains asset -- --theme-art-image intentionally omitted
-     (falls back to `none` via .world::after's var(..., none) guard) until
-     src/assets/art/major-pentatonic-mountains.svg exists on disk per the
-     art-direction plan's generation spec; themes.ts already records the
-     intended url() so the two files stay in sync once the asset lands.
-     Position/size/opacity are wired up now so only the image reference
-     itself needs adding. */
+  /* Bespoke ink-mountains asset: layered shanshui silhouettes, reserved
+     empty upper half so the waveform panel visually floats above the
+     landscape. multiply blend lets the ink tones darken naturally against
+     the xuan-paper ground instead of sitting as a flat opaque sprite. */
+  --theme-art-image: url("../assets/art/major-pentatonic-mountains.svg");
   --theme-art-position: bottom center;
   --theme-art-size: 120% auto;
+
+  /* "bottom center" needs the viewport as its positioning area, not
+     .world's own much-taller scrollable box, or the mountains only appear
+     far down the page instead of in the first fold -- same reasoning as
+     Major/Harmonic Minor/Dorian above. */
+  --theme-art-attachment: fixed;
   --theme-art-opacity: 0.85;
   --theme-art-blend-mode: multiply;
 }
@@ -444,9 +448,12 @@
   --theme-world-texture: radial-gradient(ellipse 55% 40% at 75% 20%, rgb(74 70 66 / 4.5%), transparent 65%);
   --theme-texture-strength: 0.35;
 
-  /* Bespoke sakura-branch asset -- --theme-art-image intentionally omitted
-     until src/assets/art/in-sen-sakura-branch.svg exists on disk, same
-     sequencing note as Major Pentatonic above. */
+  /* Bespoke sakura-branch asset: an asymmetric corner accent, not a
+     full-bleed background -- "top right" anchors against the top edge of
+     .world's own box, which already sits inside the first screenful at
+     both viewports (unlike Major Pentatonic's "bottom center", this one
+     doesn't need --theme-art-attachment: fixed). */
+  --theme-art-image: url("../assets/art/in-sen-sakura-branch.svg");
   --theme-art-position: top right;
   --theme-art-size: 30vw auto;
   --theme-art-opacity: 0.9;
@@ -491,11 +498,22 @@
     --theme-art-size: 100% 25%;
   }
 
+  /* Fixed attachment (used on desktop to keep the mountains inside the
+     first screenful) has no equivalent payoff on mobile: there's no wide
+     viewport for a "bottom of screen" anchor to land inside once the user
+     scrolls into the very tall .world box, and the mountain band was only
+     surfacing many panels down. Switch to scroll attachment with a fixed
+     pixel offset instead, so the ridge line sits right at .world's own top
+     edge -- visible the instant the themed section begins, same intent as
+     the desktop treatment, achieved a different way because mobile has no
+     side gutter to lean on. */
   [data-scale-theme="major-pentatonic"] {
+    --theme-art-attachment: scroll;
+    --theme-art-position: center -330px;
     --theme-art-size: 220% auto;
   }
 
   [data-scale-theme="in-sen"] {
-    --theme-art-size: 55vw auto;
+    --theme-art-size: 72vw auto;
   }
 }
